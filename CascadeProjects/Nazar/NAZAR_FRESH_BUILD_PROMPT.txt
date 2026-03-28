@@ -1,0 +1,2236 @@
+﻿# NAZAR — COMPLETE FRESH BUILD PROMPT
+# Version: FINAL (March 26, 2026)
+# Use SWE-1.5 in Windsurf (FREE — zero API credits)
+# Build in order. Test each phase. Do not skip.
+
+---
+
+## CRITICAL SETUP BEFORE STARTING
+
+```
+1. Delete old nazar/leadpulse folders completely
+2. Create fresh folder: C:\Users\samee\Desktop\Nazar\
+3. Open it in Windsurf
+4. Switch Cascade model to SWE-1.5 (FREE)
+5. Paste this entire prompt and say:
+   "Build Nazar from scratch. Start with Phase 1."
+```
+
+---
+
+## WHAT IS NAZAR
+
+India's first AI-powered buyer intent monitoring SaaS.
+
+Monitors the internet in Hindi, Hinglish, Tamil, Telugu
+and English. Alerts Indian businesses on WhatsApp when
+someone is ready to buy — before their competitor does.
+
+Two modes in one product:
+  Signal Mode  → Find buyers for your existing product
+  Discover Mode → Find unsolved problems to build new products
+
+Live domain: https://the-nazar.com (GoDaddy, DNS pointing to Vercel)
+Tagline: "Your market never sleeps. Neither does Nazar."
+
+---
+
+## TECH STACK — NON-NEGOTIABLE
+
+```
+Frontend:  React 18 + Vite + TypeScript + Tailwind CSS v3
+Backend:   Python 3.11 + FastAPI
+Database:  PostgreSQL 16 (SQLite for local dev only)
+ORM:       SQLAlchemy 2.0 + Alembic
+Queue:     Redis + Celery + Celery Beat
+Auth:      JWT + Email OTP via Resend (6-digit code)
+Payments:  Razorpay (India INR) — TEST MODE
+AI:        claude-haiku-4-5-20251001 (signal scoring)
+           claude-sonnet-4-6 (reply generation)
+Scrapers:  SerpApi (primary) + Reddit JSON (backup)
+WhatsApp:  AiSensy API
+Email:     Resend (signals@the-nazar.com)
+Deploy:    Vercel (frontend) + Render.com (backend)
+State:     Zustand + persist middleware (localStorage)
+HTTP:      Axios (frontend) + HTTPX (backend)
+Fonts:     Outfit 900 + DM Sans + JetBrains Mono
+```
+
+IMPORTANT — Python version:
+  Use Python 3.11 exactly.
+  Use pg8000 (pure Python) NOT psycopg2.
+  pg8000 works without Rust/gcc compilation.
+
+---
+
+## DESIGN SYSTEM — EXACT VALUES
+
+```
+PRIMARY COLOUR:    #0F6E56  (Deep Teal — NOT indigo)
+TEAL MID:          #1D9E75
+TEAL LIGHT:        #E1F5EE
+TEAL BORDER:       #9FE1CB
+TEAL DARK:         #085041
+MINT (dark bgs):   #63FFB8
+
+PAGE BACKGROUND:   #FAF7F2  (warm cream)
+DESKTOP WRAPPER:   #EDE8DF
+CARD:              #FFFFFF
+SOFT:              #F0EBE3
+WARM:              #EDE8DF
+
+TEXT PRIMARY:      #1A1410
+TEXT SECONDARY:    #6B6560
+TEXT MUTED:        #B0A898
+DARK:              #1A1410
+DARK2:             #0A2E23
+
+SIGNAL HEAT COLOURS:
+  Red (buying 80+):   #DC2626
+  Amber (mid 60-79):  #D97706
+  Purple (AI):        #7C3AED
+  Green (success):    #059669
+
+FONTS:
+  Display:  Outfit 900 weight   (headings, logo, wordmark)
+  Body:     DM Sans 400/500/600 (all body text)
+  Data:     JetBrains Mono      (scores, numbers, code)
+```
+
+Add to tailwind.config.js:
+```js
+theme: {
+  extend: {
+    colors: {
+      teal:          '#0F6E56',
+      'teal-mid':    '#1D9E75',
+      'teal-light':  '#E1F5EE',
+      'teal-border': '#9FE1CB',
+      'teal-dark':   '#085041',
+      mint:          '#63FFB8',
+      dark:          '#1A1410',
+      dark2:         '#0A2E23',
+      cream:         '#FAF7F2',
+      soft:          '#F0EBE3',
+      warm:          '#EDE8DF',
+    },
+    fontFamily: {
+      display: ['Outfit', 'sans-serif'],
+      body:    ['DM Sans', 'sans-serif'],
+      mono:    ['JetBrains Mono', 'monospace'],
+    }
+  }
+}
+```
+
+---
+
+## NAMING CONVENTIONS — ABSOLUTE RULES
+
+```
+USE THIS:             NEVER USE THIS:
+watch_zone            monitor / monitors
+signal                pain_point / lead
+signal_strength       intent_score
+signal_type           intent_label
+is_archived           is_dismissed
+archive               dismiss
+watch_zones_count     monitors_count
+reply                 alert
+Find this customer    Find buyers / Find leads
+Monitor the internet  Monitor Reddit / Monitor Twitter
+```
+
+API routes:
+```
+/api/watch-zones     NOT /api/monitors
+/api/signals         NOT /api/pain-points
+/api/replies         NOT /api/alerts
+/api/industries      standalone router
+/api/discover        standalone router
+/api/billing         standalone router
+/api/test            test routes
+```
+
+---
+
+## MASTER TOGGLE — TEST MODE
+
+```
+TEST_MODE=true   in .env
+
+When TEST_MODE=true:
+  Razorpay:  use rzp_test_ keys
+  AiSensy:   print to console (no real WhatsApp)
+  Resend:    print to console (no real email)
+  Celery:    run every 5 minutes (not 30)
+  OTP:       print to console + accept any 6 digits
+  Payments:  no real charges
+
+When TEST_MODE=false (production):
+  Everything goes live instantly
+  One flag controls all services
+```
+
+---
+
+## PRICING — FINAL LOCKED
+
+Create src/config/pricing.ts (frontend)
+and backend/app/data/plan_limits.py (backend).
+
+NEVER hardcode prices anywhere else.
+Import from these files everywhere.
+
+```python
+# backend/app/data/plan_limits.py
+
+PLAN_LIMITS = {
+    "free": {
+        "price_inr": 0,
+        "watch_zones": 2,
+        "signals_mo": 3,
+        "platforms": ["reddit"],
+        "languages": ["en"],
+        "whatsapp": False,
+        "reply_ai": False,
+        "discover_limit": 3,
+        "team_members": 1,
+        "badge": None,
+        "trial_days": 0,
+    },
+    "starter": {
+        "price_inr": 999,
+        "price_inr_annual": 799,
+        "watch_zones": 10,
+        "signals_mo": 100,
+        "platforms": ["reddit", "quora", "twitter"],
+        "languages": ["en", "hi", "hinglish"],
+        "whatsapp": True,
+        "reply_ai": True,
+        "discover_limit": 20,
+        "team_members": 1,
+        "badge": "Most Popular",
+        "trial_days": 7,
+    },
+    "growth": {
+        "price_inr": 2499,
+        "price_inr_annual": 1999,
+        "watch_zones": 25,
+        "signals_mo": 500,
+        "platforms": "all",
+        "languages": ["en", "hi", "hinglish", "ta", "te"],
+        "whatsapp": True,
+        "reply_ai": True,
+        "discover_limit": -1,
+        "team_members": 1,
+        "badge": "Recommended",
+        "trial_days": 0,
+    },
+    "pro": {
+        "price_inr": 5999,
+        "price_inr_annual": 4799,
+        "watch_zones": -1,  # unlimited
+        "signals_mo": 2000,
+        "platforms": "all",
+        "languages": "all",
+        "whatsapp": True,
+        "reply_ai": True,
+        "discover_limit": -1,
+        "team_members": 3,
+        "badge": None,
+        "trial_days": 0,
+    },
+    "agency": {
+        "price_inr": 14999,
+        "price_inr_annual": 11999,
+        "watch_zones": -1,
+        "signals_mo": -1,   # unlimited
+        "platforms": "all",
+        "languages": "all",
+        "whatsapp": True,
+        "reply_ai": True,
+        "discover_limit": -1,
+        "team_members": 10,
+        "white_label": True,
+        "badge": None,
+        "trial_days": 0,
+    },
+    "enterprise": {
+        "price_inr": 29999,
+        "watch_zones": -1,
+        "signals_mo": -1,
+        "platforms": "all",
+        "languages": "all",
+        "whatsapp": True,
+        "reply_ai": True,
+        "discover_limit": -1,
+        "team_members": -1,  # unlimited
+        "white_label": True,
+        "api_access": True,
+        "sla": True,
+        "badge": None,
+        "trial_days": 0,
+    },
+}
+```
+
+Annual prices (20% off): import and calculate in both files.
+Starter annual: ₹799/mo · Growth: ₹1,999/mo
+Pro: ₹4,799/mo · Agency: ₹11,999/mo
+
+---
+
+## PROJECT FOLDER STRUCTURE
+
+```
+C:\Users\samee\Desktop\Nazar\
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── config.py           ← Settings + TEST_MODE
+│   │   ├── database.py
+│   │   ├── dependencies.py     ← Auth + plan limit checks
+│   │   ├── models/
+│   │   │   ├── user.py
+│   │   │   ├── watch_zone.py   ← NOT monitor.py
+│   │   │   ├── signal.py       ← NOT pain_point.py
+│   │   │   └── reply.py
+│   │   ├── routers/
+│   │   │   ├── auth.py
+│   │   │   ├── users.py
+│   │   │   ├── watch_zones.py
+│   │   │   ├── signals.py
+│   │   │   ├── replies.py
+│   │   │   ├── discover.py
+│   │   │   ├── billing.py
+│   │   │   ├── industries.py
+│   │   │   ├── analytics.py
+│   │   │   ├── webhooks.py
+│   │   │   └── test_routes.py
+│   │   ├── services/
+│   │   │   ├── serpapi_service.py
+│   │   │   ├── signal_scorer.py
+│   │   │   ├── aisensy_service.py
+│   │   │   ├── email_service.py
+│   │   │   ├── razorpay_service.py
+│   │   │   └── discover_service.py
+│   │   ├── tasks/
+│   │   │   ├── scrape_watch_zones.py
+│   │   │   └── send_alerts.py
+│   │   └── data/
+│   │       ├── plan_limits.py  ← SINGLE SOURCE OF TRUTH
+│   │       ├── industries.py
+│   │       └── signal_types.py
+│   ├── alembic/
+│   ├── requirements.txt
+│   ├── .env
+│   └── render.yaml             ← Render.com deploy config
+├── frontend/
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── marketing/
+│   │   │   │   ├── HomePage.tsx
+│   │   │   │   ├── HowItWorksPage.tsx
+│   │   │   │   ├── PricingPage.tsx
+│   │   │   │   ├── AboutPage.tsx
+│   │   │   │   ├── BlogPage.tsx
+│   │   │   │   └── ContactPage.tsx
+│   │   │   ├── auth/
+│   │   │   │   ├── RegisterPage.tsx
+│   │   │   │   ├── LoginPage.tsx
+│   │   │   │   └── OTPPage.tsx
+│   │   │   ├── onboarding/
+│   │   │   │   └── OnboardingPage.tsx
+│   │   │   └── app/
+│   │   │       ├── AppLayout.tsx
+│   │   │       ├── SignalsPage.tsx
+│   │   │       ├── WatchZonesPage.tsx
+│   │   │       ├── DiscoverPage.tsx
+│   │   │       ├── RepliesPage.tsx
+│   │   │       └── AccountPage.tsx
+│   │   ├── components/
+│   │   │   ├── marketing/
+│   │   │   │   ├── Navbar.tsx
+│   │   │   │   ├── Footer.tsx
+│   │   │   │   └── NazarEye.tsx
+│   │   │   └── app/
+│   │   │       ├── SignalCard.tsx
+│   │   │       ├── WatchZoneCard.tsx
+│   │   │       └── BottomNav.tsx
+│   │   ├── store/
+│   │   │   └── authStore.ts    ← Zustand + persist
+│   │   ├── api/
+│   │   │   └── client.ts       ← Axios + interceptors
+│   │   └── config/
+│   │       └── pricing.ts      ← SINGLE SOURCE OF TRUTH
+│   ├── public/
+│   │   ├── sitemap.xml
+│   │   └── robots.txt
+│   ├── vercel.json
+│   └── index.html
+└── .env.example
+```
+
+---
+
+## PHASE 1 — BACKEND FOUNDATION
+
+### 1.1 requirements.txt
+
+```
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+sqlalchemy==2.0.35
+alembic==1.13.3
+pg8000==1.30.5
+pydantic==2.9.2
+pydantic-settings==2.6.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.12
+httpx==0.27.2
+python-dotenv==1.0.1
+celery[redis]==5.4.0
+redis==5.1.1
+anthropic==0.39.0
+google-search-results==2.4.2
+razorpay==1.4.2
+resend==2.4.0
+slowapi==0.1.9
+```
+
+DO NOT use psycopg2 — use pg8000 only.
+
+### 1.2 .env
+
+```
+APP_NAME=Nazar
+ENVIRONMENT=development
+TEST_MODE=true
+SECRET_KEY=nazar-dev-secret-key-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+FRONTEND_URL=http://localhost:5173
+BACKEND_URL=http://localhost:8000
+
+DATABASE_URL=postgresql+pg8000://nazar:nazar123@localhost:5432/nazar
+REDIS_URL=redis://localhost:6379/0
+
+ANTHROPIC_API_KEY=your_anthropic_key_here
+SERPAPI_KEY=your_serpapi_key_here
+
+RAZORPAY_KEY_ID=rzp_test_xxxx
+RAZORPAY_KEY_SECRET=xxxx
+RAZORPAY_WEBHOOK_SECRET=xxxx
+
+AISENSY_API_KEY=test
+RESEND_API_KEY=test
+EMAIL_FROM=signals@the-nazar.com
+```
+
+### 1.3 Database Models
+
+#### users table:
+```sql
+id                    UUID PRIMARY KEY DEFAULT gen_random_uuid()
+email                 VARCHAR(255) UNIQUE NOT NULL
+phone                 VARCHAR(20)
+name                  VARCHAR(255)
+password_hash         VARCHAR(255)
+is_verified           BOOLEAN DEFAULT FALSE
+otp_code              VARCHAR(6)
+otp_expires_at        TIMESTAMP
+plan                  VARCHAR(50) DEFAULT 'free'
+plan_expires_at       TIMESTAMP
+onboarding_completed  BOOLEAN DEFAULT FALSE
+whatsapp_alerts       BOOLEAN DEFAULT TRUE
+email_alerts          BOOLEAN DEFAULT TRUE
+min_signal_strength   INTEGER DEFAULT 60
+watch_zones_count     INTEGER DEFAULT 0
+signals_this_month    INTEGER DEFAULT 0
+industry              VARCHAR(100)
+sub_sectors           JSONB DEFAULT '[]'
+business_name         VARCHAR(255)
+business_description  TEXT
+razorpay_subscription_id VARCHAR(255)
+razorpay_customer_id  VARCHAR(255)
+created_at            TIMESTAMP DEFAULT NOW()
+updated_at            TIMESTAMP DEFAULT NOW()
+```
+
+#### watch_zones table:
+```sql
+id                    UUID PRIMARY KEY DEFAULT gen_random_uuid()
+user_id               UUID REFERENCES users(id) ON DELETE CASCADE
+name                  VARCHAR(255) NOT NULL
+search_query          TEXT NOT NULL
+keywords_extracted    JSONB DEFAULT '[]'
+platforms             JSONB DEFAULT '["reddit","quora"]'
+languages             JSONB DEFAULT '["en","hi"]'
+min_signal_strength   INTEGER DEFAULT 60
+is_active             BOOLEAN DEFAULT TRUE
+is_starred            BOOLEAN DEFAULT FALSE
+total_signals         INTEGER DEFAULT 0
+unread_count          INTEGER DEFAULT 0
+last_run_at           TIMESTAMP
+next_run_at           TIMESTAMP
+industry              VARCHAR(100)
+sub_sectors           JSONB DEFAULT '[]'
+created_at            TIMESTAMP DEFAULT NOW()
+updated_at            TIMESTAMP DEFAULT NOW()
+```
+
+#### signals table:
+```sql
+id                    UUID PRIMARY KEY DEFAULT gen_random_uuid()
+watch_zone_id         UUID REFERENCES watch_zones(id) ON DELETE CASCADE
+user_id               UUID REFERENCES users(id) ON DELETE CASCADE
+platform              VARCHAR(50)
+platform_post_id      VARCHAR(500) UNIQUE
+post_url              TEXT
+post_title            TEXT
+post_content          TEXT
+post_content_translated TEXT
+signal_strength       INTEGER
+signal_type           VARCHAR(50)
+urgency               VARCHAR(20)
+language              VARCHAR(10)
+ai_summary            TEXT
+suggested_reply       TEXT
+reply_language        VARCHAR(10)
+is_replied            BOOLEAN DEFAULT FALSE
+is_archived           BOOLEAN DEFAULT FALSE
+is_starred            BOOLEAN DEFAULT FALSE
+is_read               BOOLEAN DEFAULT FALSE
+alerted_whatsapp      BOOLEAN DEFAULT FALSE
+alerted_email         BOOLEAN DEFAULT FALSE
+posted_at             TIMESTAMP
+discovered_at         TIMESTAMP DEFAULT NOW()
+```
+
+#### replies table:
+```sql
+id          UUID PRIMARY KEY DEFAULT gen_random_uuid()
+user_id     UUID REFERENCES users(id) ON DELETE CASCADE
+signal_id   UUID REFERENCES signals(id) ON DELETE CASCADE
+channel     VARCHAR(20)
+status      VARCHAR(20) DEFAULT 'pending'
+sent_at     TIMESTAMP
+created_at  TIMESTAMP DEFAULT NOW()
+```
+
+### 1.4 Auth Routes
+
+```
+POST /api/auth/register
+  Body: {name, email, phone, password}
+  → Hash password with bcrypt
+  → Create user with is_verified=False
+  → Generate 6-digit OTP, expires 10 minutes
+  → In TEST_MODE: print OTP to console
+  → In production: send via Resend email
+  → Return: {success: true, message: "OTP sent to email"}
+
+POST /api/auth/verify-otp
+  Body: {email, otp}
+  → In TEST_MODE: accept any 6-digit code
+  → Check OTP + expiry
+  → Set is_verified=True
+  → Return: {access_token, user}
+
+POST /api/auth/login
+  Body: {email, password}
+  → Verify password with bcrypt
+  → Require is_verified=True (or skip in TEST_MODE)
+  → Return: {access_token, user}
+  → Frontend: if onboarding_completed → /app/signals
+              else → /onboarding
+
+POST /api/auth/resend-otp
+  Body: {email}
+  → Generate new OTP, print to console in TEST_MODE
+
+JWT tokens:
+  Include in Authorization: Bearer {token}
+  All /api/* routes except /auth/* require token
+  ProtectedRoute redirects to /login NOT to /
+```
+
+### 1.5 Core Routes
+
+```
+GET  /health
+     → {status:"ok", app:"Nazar", test_mode:true}
+
+GET  /api/users/me         → current user profile
+PATCH /api/users/me        → update profile
+                             onboarding_completed, industry etc
+
+GET  /api/industries       → list 13 industries
+GET  /api/industries/{id}/sub-sectors
+
+GET  /api/watch-zones      → list user's watch zones
+POST /api/watch-zones      → create (enforces plan limit)
+PATCH /api/watch-zones/{id}
+DELETE /api/watch-zones/{id}
+POST /api/watch-zones/{id}/run → trigger manual scrape
+
+GET  /api/signals          → list with filters
+     ?min_score=60&platform=reddit&language=hi
+     ?is_archived=false&sort=strength_desc
+PATCH /api/signals/{id}/star
+PATCH /api/signals/{id}/archive
+PATCH /api/signals/{id}/read
+POST  /api/signals/{id}/reply  → generate AI reply
+POST  /api/signals/bulk-archive
+GET   /api/signals/stats   → dashboard stats
+
+GET  /api/discover/problems → ranked problem list
+GET  /api/discover/trending
+
+GET  /api/billing/status   → current plan + usage
+POST /api/billing/subscribe → create Razorpay subscription
+POST /api/webhooks/razorpay → webhook handler
+
+GET  /api/analytics/overview → stats overview
+```
+
+### 1.6 Test Routes
+
+```
+GET  /api/test/test-mode-status
+     → {test_mode: true, app: "Nazar"}
+
+GET  /api/test/phase3-services
+     → {razorpay: "mock", aisensy: "mock",
+        resend: "mock", celery: "running"}
+
+GET  /api/test/scrape?query=CRM+India
+     → runs SerpApi scraper, returns raw results
+
+GET  /api/test/score?query=CRM+India
+     → scrapes + scores with Claude Haiku
+     → returns signals with strength 0-100
+
+POST /api/test/test-whatsapp
+     → prints mock WhatsApp message to console
+
+POST /api/test/test-email
+     → prints mock email to console
+
+POST /api/test/test-subscription
+     → mock Razorpay subscription flow
+```
+
+### 1.7 Plan Limit Enforcement
+
+In dependencies.py:
+```python
+def check_watch_zone_limit(current_user):
+    limits = PLAN_LIMITS[current_user.plan]
+    max_zones = limits["watch_zones"]
+    if max_zones != -1 and current_user.watch_zones_count >= max_zones:
+        raise HTTPException(403, {
+            "error": "WATCH_ZONE_LIMIT_REACHED",
+            "message": f"Upgrade to add more Watch Zones",
+            "upgrade_url": "/app/account"
+        })
+
+def check_signal_limit(current_user):
+    limits = PLAN_LIMITS[current_user.plan]
+    max_signals = limits["signals_mo"]
+    if max_signals != -1 and current_user.signals_this_month >= max_signals:
+        raise HTTPException(403, {
+            "error": "SIGNAL_LIMIT_REACHED",
+            "message": "Monthly signal limit reached. Upgrade to continue.",
+            "upgrade_url": "/app/account"
+        })
+```
+
+---
+
+## ════════════════════════════════════════════
+## AUTO BACKEND TEST — RUN AFTER PHASE 1
+## ════════════════════════════════════════════
+
+After Phase 1 is built, before doing anything else:
+
+Run this Python test script (backend/test_backend.py):
+
+```python
+import httpx
+import json
+import time
+
+BASE = "http://localhost:8000"
+PASS = 0
+FAIL = 0
+
+def test(name, method, path, body=None,
+         token=None, expected_status=200):
+    global PASS, FAIL
+    headers = {"Content-Type": "application/json"}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    try:
+        if method == "GET":
+            r = httpx.get(BASE + path, headers=headers)
+        elif method == "POST":
+            r = httpx.post(BASE + path,
+                           json=body, headers=headers)
+        elif method == "PATCH":
+            r = httpx.patch(BASE + path,
+                            json=body, headers=headers)
+
+        ok = r.status_code == expected_status
+        status = "PASS" if ok else "FAIL"
+        if ok:
+            PASS += 1
+        else:
+            FAIL += 1
+        print(f"  {status} | {name} | "
+              f"HTTP {r.status_code}")
+        if not ok:
+            print(f"       Response: {r.text[:150]}")
+        return r.json() if r.status_code < 500 else {}
+    except Exception as e:
+        FAIL += 1
+        print(f"  FAIL | {name} | ERROR: {e}")
+        return {}
+
+print("\n" + "="*50)
+print("NAZAR BACKEND AUTO-TEST")
+print("="*50)
+
+# PHASE 1: HEALTH
+print("\n[PHASE 1] Health & Config")
+r = test("Health check", "GET", "/health")
+assert r.get("app") == "Nazar", "App name wrong!"
+test("Test mode ON", "GET", "/api/test/test-mode-status")
+
+# PHASE 2: REGISTRATION
+print("\n[PHASE 2] Registration")
+import random
+email = f"test_{random.randint(1000,9999)}@nazar.test"
+r = test("Register new user", "POST", "/api/auth/register",
+         {"name":"Test User","email":email,
+          "phone":"9876543210","password":"Test@1234"})
+
+r2 = test("Verify OTP (any code in test mode)", "POST",
+          "/api/auth/verify-otp",
+          {"email":email, "otp":"123456"})
+TOKEN = r2.get("access_token")
+
+# PHASE 3: AUTH PROTECTION
+print("\n[PHASE 3] Auth Protection")
+test("Protected route without token",
+     "GET", "/api/watch-zones",
+     expected_status=401)
+test("Protected route with token",
+     "GET", "/api/watch-zones",
+     token=TOKEN, expected_status=200)
+test("Login wrong password",
+     "POST", "/api/auth/login",
+     {"email":email,"password":"wrongpassword"},
+     expected_status=401)
+
+# PHASE 4: LOGIN FLOW
+print("\n[PHASE 4] Login")
+r3 = test("Login with valid credentials",
+          "POST", "/api/auth/login",
+          {"email":email,"password":"Test@1234"})
+LOGIN_TOKEN = r3.get("access_token", TOKEN)
+assert r3.get("user", {}).get("email") == email
+
+# PHASE 5: USER PROFILE
+print("\n[PHASE 5] User Profile")
+test("Get current user", "GET",
+     "/api/users/me", token=LOGIN_TOKEN)
+test("Update onboarding complete", "PATCH",
+     "/api/users/me",
+     {"onboarding_completed":True,
+      "industry":"saas",
+      "business_name":"Test Company"},
+     token=LOGIN_TOKEN)
+
+# PHASE 6: INDUSTRIES
+print("\n[PHASE 6] Industries")
+r4 = test("Get all industries", "GET", "/api/industries")
+industries = r4.get("data",{}).get("industries",[])
+assert len(industries) >= 10, \
+    f"Expected 10+ industries, got {len(industries)}"
+print(f"         {len(industries)} industries returned")
+
+# PHASE 7: WATCH ZONES
+print("\n[PHASE 7] Watch Zones")
+r5 = test("Create watch zone", "POST", "/api/watch-zones",
+          {"name":"CRM India","search_query":"CRM software India",
+           "keywords_extracted":["CRM","India","startup"],
+           "platforms":["reddit","quora"],
+           "languages":["en","hinglish"],
+           "min_signal_strength":60,"is_active":True},
+          token=LOGIN_TOKEN, expected_status=201)
+WZ_ID = r5.get("data",{}).get("id")
+test("List watch zones", "GET",
+     "/api/watch-zones", token=LOGIN_TOKEN)
+if WZ_ID:
+    test("Free plan allows 2 zones (create 2nd)", "POST",
+         "/api/watch-zones",
+         {"name":"GST India","search_query":"GST filing India",
+          "keywords_extracted":["GST","filing"],
+          "platforms":["reddit"],"languages":["en"],
+          "min_signal_strength":60,"is_active":True},
+         token=LOGIN_TOKEN, expected_status=201)
+    test("Free plan blocks 3rd zone", "POST",
+         "/api/watch-zones",
+         {"name":"3rd Zone","search_query":"test",
+          "keywords_extracted":["test"],
+          "platforms":["reddit"],"languages":["en"],
+          "min_signal_strength":60,"is_active":True},
+         token=LOGIN_TOKEN, expected_status=403)
+
+# PHASE 8: SCRAPERS
+print("\n[PHASE 8] Scrapers & AI Scoring")
+r6 = test("Scrape test — CRM India",
+          "GET", "/api/test/scrape?query=CRM+India")
+results = r6.get("results",r6.get("data",[]))
+print(f"         Scraper returned results")
+
+r7 = test("Score test — CRM India",
+          "GET", "/api/test/score?query=CRM+India")
+signals = r7.get("scored_signals",r7.get("signals",[]))
+print(f"         Scored signals returned")
+
+# PHASE 9: SIGNALS
+print("\n[PHASE 9] Signals")
+test("List signals (empty ok)", "GET",
+     "/api/signals", token=LOGIN_TOKEN)
+test("Signal stats", "GET",
+     "/api/signals/stats", token=LOGIN_TOKEN)
+test("Filter by score", "GET",
+     "/api/signals?min_score=60", token=LOGIN_TOKEN)
+
+# PHASE 10: DISCOVER
+print("\n[PHASE 10] Discover Mode")
+test("Discover problems", "GET",
+     "/api/discover/problems", token=LOGIN_TOKEN)
+
+# PHASE 11: TEST SERVICES
+print("\n[PHASE 11] Test Services")
+test("WhatsApp mock", "POST", "/api/test/test-whatsapp",
+     {"phone":"919876543210",
+      "message":"Test signal from Nazar"})
+test("Email mock", "POST", "/api/test/test-email",
+     {"email":"test@test.com"})
+
+# SUMMARY
+print("\n" + "="*50)
+print(f"RESULTS: {PASS} PASSED | {FAIL} FAILED")
+total = PASS + FAIL
+pct = round(PASS/total*100) if total > 0 else 0
+print(f"Score: {pct}%")
+if FAIL == 0:
+    print("ALL TESTS PASSED ✓ — Proceed to frontend")
+elif FAIL <= 3:
+    print(f"MOSTLY PASSING — Fix {FAIL} failures then proceed")
+else:
+    print(f"MULTIPLE FAILURES — Fix before frontend")
+print("="*50 + "\n")
+```
+
+Run it:
+```bash
+cd backend
+python test_backend.py
+```
+
+DO NOT proceed to frontend until:
+  - Health check passes
+  - Register + OTP + Login works
+  - Watch zones creates and plan limit blocks 3rd zone
+  - Scraper returns results
+  - Signal scoring works
+
+Fix ALL critical failures first.
+
+---
+
+## PHASE 2 — SCRAPER + AI SCORING
+
+### 2.1 SerpApi Service (services/serpapi_service.py)
+
+```python
+import httpx
+import asyncio
+import random
+import time
+
+SERPAPI_KEY = settings.SERPAPI_KEY
+
+async def search_platform(query: str, platform: str,
+                          num: int = 10) -> list:
+    """Search a specific platform via SerpApi."""
+    site_map = {
+        "reddit":   "site:reddit.com",
+        "quora":    "site:quora.com",
+        "indiamart":"site:indiamart.com",
+        "youtube":  "site:youtube.com",
+    }
+    site = site_map.get(platform, "")
+    full_query = f"{site} {query}" if site else query
+
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            r = await client.get(
+                "https://serpapi.com/search",
+                params={
+                    "q": full_query,
+                    "api_key": SERPAPI_KEY,
+                    "num": num,
+                    "gl": "in",           # India results
+                    "hl": "en",
+                    "tbs": "qdr:w",       # last week
+                }
+            )
+            data = r.json()
+            results = []
+            for item in data.get("organic_results", []):
+                results.append({
+                    "platform":  platform,
+                    "title":     item.get("title", ""),
+                    "snippet":   item.get("snippet", ""),
+                    "link":      item.get("link", ""),
+                    "date":      item.get("date", ""),
+                })
+            return results
+    except Exception as e:
+        print(f"[SerpApi] {platform} error: {e}")
+        return []
+
+
+async def search_all_platforms(query: str) -> dict:
+    """Search all platforms concurrently."""
+    platforms = ["reddit", "quora", "indiamart", "youtube"]
+    tasks = [search_platform(query, p) for p in platforms]
+
+    # Small random delay to avoid rate limits
+    await asyncio.sleep(random.uniform(0.5, 1.5))
+
+    results = await asyncio.gather(*tasks,
+                                   return_exceptions=True)
+    combined = {}
+    for platform, result in zip(platforms, results):
+        if isinstance(result, Exception):
+            combined[platform] = []
+        else:
+            combined[platform] = result
+    return combined
+```
+
+### 2.2 Signal Scorer (services/signal_scorer.py)
+
+```python
+import anthropic
+import json
+
+client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+
+SYSTEM_PROMPT = """You are a market intelligence AI for
+Indian businesses. Analyze social media posts and return
+ONLY valid JSON. No markdown. No explanation. Just JSON."""
+
+def score_signal(post_title: str, post_content: str) -> dict:
+    """
+    Score a post for buyer intent using Claude Haiku.
+    Returns None if signal is not relevant.
+    """
+    if not post_title and not post_content:
+        return None
+
+    text = f"Title: {post_title}\n\nContent: {post_content}"
+
+    try:
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=300,
+            system=SYSTEM_PROMPT,
+            messages=[{
+                "role": "user",
+                "content": f"""Analyze this internet post
+for buyer intent from an Indian business perspective.
+
+{text}
+
+Return this exact JSON:
+{{
+  "signal_strength": <0-100 integer>,
+  "signal_type": "<BUYING|SWITCHING|HELP_SEEKING|COMPLAINING|RESEARCHING|NOT_RELEVANT>",
+  "urgency": "<HIGH|MEDIUM|LOW>",
+  "language": "<en|hi|hinglish|ta|te>",
+  "ai_summary": "<one sentence in English>",
+  "reply_language": "<en|hi|hinglish|ta|te>"
+}}
+
+Signal strength guide:
+90-100: Actively buying NOW — urgent
+75-89:  Comparing/switching — strong intent
+60-74:  Frustrated/seeking help
+40-59:  Researching
+0-39:   Not relevant (return NOT_RELEVANT)"""
+            }]
+        )
+
+        text_response = response.content[0].text.strip()
+        # Clean any markdown fences
+        text_response = text_response.replace("```json","")
+        text_response = text_response.replace("```","")
+
+        scored = json.loads(text_response)
+
+        # Skip irrelevant signals
+        if (scored.get("signal_type") == "NOT_RELEVANT"
+                or scored.get("signal_strength", 0) < 40):
+            return None
+
+        return scored
+
+    except Exception as e:
+        print(f"[Scorer] Error: {e}")
+        return None
+```
+
+### 2.3 Watch Zone Task (tasks/scrape_watch_zones.py)
+
+```python
+from celery import Celery
+from app.services.serpapi_service import search_all_platforms
+from app.services.signal_scorer import score_signal
+
+@celery_app.task
+def run_all_watch_zones():
+    """Runs every 5 min (TEST) or 30 min (PROD)"""
+    active_zones = db.query(WatchZone)\
+        .filter(WatchZone.is_active == True).all()
+    for zone in active_zones:
+        process_watch_zone.delay(str(zone.id))
+
+@celery_app.task
+def process_watch_zone(watch_zone_id: str):
+    zone = get_watch_zone(watch_zone_id)
+    if not zone:
+        return
+
+    all_results = run_async(
+        search_all_platforms(zone.search_query)
+    )
+
+    for platform, posts in all_results.items():
+        for post in posts:
+            # Dedup by URL
+            if signal_exists(post["link"]):
+                continue
+
+            # Check signal limit for user
+            user = zone.user
+            limits = PLAN_LIMITS[user.plan]
+            if (limits["signals_mo"] != -1 and
+                    user.signals_this_month >= limits["signals_mo"]):
+                continue
+
+            # Score with Claude Haiku
+            scored = score_signal(
+                post["title"], post["snippet"]
+            )
+            if scored is None:
+                continue
+
+            # Save signal
+            signal = save_signal(zone, post, scored)
+
+            # Alert if above threshold
+            if (scored["signal_strength"]
+                    >= zone.min_signal_strength):
+                send_signal_alert.delay(
+                    str(user.id), str(signal.id)
+                )
+
+            # Update usage counter
+            user.signals_this_month += 1
+            db.commit()
+```
+
+### 2.4 Celery Beat Schedule
+
+```python
+# celeryconfig.py
+from celery.schedules import crontab
+import os
+
+TEST_MODE = os.getenv("TEST_MODE", "true") == "true"
+
+beat_schedule = {
+    "run-watch-zones": {
+        "task": "app.tasks.scrape_watch_zones.run_all_watch_zones",
+        "schedule": crontab(minute="*/5") if TEST_MODE
+                    else crontab(minute="*/30"),
+    },
+    "daily-digest": {
+        "task": "app.tasks.send_alerts.send_daily_digest",
+        "schedule": crontab(hour=3, minute=30),  # 9AM IST
+    },
+    "reset-monthly-usage": {
+        "task": "app.tasks.scrape_watch_zones.reset_monthly_usage",
+        "schedule": crontab(day_of_month=1, hour=0),
+    },
+}
+```
+
+---
+
+## PHASE 3 — WHATSAPP + EMAIL + PAYMENTS
+
+### 3.1 AiSensy Service (services/aisensy_service.py)
+
+```python
+def send_signal_alert(user, signal):
+    """Send WhatsApp alert via AiSensy.
+    In TEST_MODE: print to console only."""
+
+    if not user.whatsapp_alerts or not user.phone:
+        return
+
+    message = (
+        f"🔴 Hot Signal — Nazar\n"
+        f"Platform: {signal.platform} | "
+        f"Score: {signal.signal_strength}/100\n"
+        f"Intent: {signal.signal_type}\n"
+        f"Post: {signal.post_title[:100]}\n\n"
+        f"✦ {signal.ai_summary}\n\n"
+        f"🔗 {signal.post_url}"
+    )
+
+    if settings.TEST_MODE:
+        print(f"\n[AiSensy MOCK] WhatsApp to {user.phone}:")
+        print(message)
+        return
+
+    # Production: POST to AiSensy API
+    # POST https://backend.aisensy.com/campaign/t1/api/v2
+```
+
+### 3.2 Email Service (services/email_service.py)
+
+```python
+def send_otp_email(email: str, otp: str):
+    if settings.TEST_MODE:
+        print(f"\n[Email MOCK] OTP for {email}: {otp}")
+        return
+
+    # Production: send via Resend SDK
+    import resend
+    resend.api_key = settings.RESEND_API_KEY
+    resend.Emails.send({
+        "from": settings.EMAIL_FROM,
+        "to": email,
+        "subject": f"Your Nazar verification code: {otp}",
+        "html": f"<p>Your code: <strong>{otp}</strong></p>"
+    })
+
+def send_welcome_email(email: str, name: str):
+    if settings.TEST_MODE:
+        print(f"\n[Email MOCK] Welcome email to {email}")
+        return
+    # Production: send via Resend
+```
+
+### 3.3 Razorpay Service (services/razorpay_service.py)
+
+```python
+# TEST MODE: rzp_test_ keys only
+# Plan IDs created via Razorpay dashboard
+
+PLAN_RAZORPAY_IDS = {
+    "starter":    os.getenv("RAZORPAY_PLAN_STARTER"),
+    "growth":     os.getenv("RAZORPAY_PLAN_GROWTH"),
+    "pro":        os.getenv("RAZORPAY_PLAN_PRO"),
+    "agency":     os.getenv("RAZORPAY_PLAN_AGENCY"),
+    "enterprise": os.getenv("RAZORPAY_PLAN_ENTERPRISE"),
+}
+
+def create_subscription(user_id, plan):
+    if settings.TEST_MODE:
+        return {
+            "subscription_id": f"sub_test_{uuid4().hex[:8]}",
+            "payment_link": "https://rzp.io/test/subscribe"
+        }
+    # Production: create via Razorpay SDK
+```
+
+Webhook routes:
+```
+POST /api/webhooks/razorpay
+  Events:
+    subscription.activated → update user.plan
+    subscription.charged   → log payment
+    subscription.cancelled → downgrade to free
+    payment.failed         → send alert
+  Always verify webhook signature before processing
+```
+
+---
+
+## PHASE 4 — AUTH FLOW (CRITICAL — MUST WORK)
+
+### 4.1 Auth Store (src/store/authStore.ts)
+
+```typescript
+import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
+
+interface User {
+  id: string
+  email: string
+  name: string
+  phone: string
+  plan: string
+  onboarding_completed: boolean
+}
+
+interface AuthState {
+  token: string | null
+  user: User | null
+  isAuthenticated: boolean
+  setToken: (token: string) => void
+  setUser: (user: User) => void
+  setAuthenticated: (val: boolean) => void
+  logout: () => void
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set) => ({
+      token: null,
+      user: null,
+      isAuthenticated: false,
+      setToken: (token) => set({ token }),
+      setUser: (user) => set({ user }),
+      setAuthenticated: (isAuthenticated) =>
+        set({ isAuthenticated }),
+      logout: () => set({
+        token: null,
+        user: null,
+        isAuthenticated: false
+      }),
+    }),
+    {
+      name: 'nazar-auth',
+      storage: createJSONStorage(() => localStorage),
+    }
+  )
+)
+```
+
+### 4.2 Registration Flow
+
+```
+User fills register form
+  → POST /api/auth/register
+  → Backend creates user + sends OTP (console in TEST_MODE)
+  → Frontend → navigate('/verify-otp')
+
+OTP page:
+  → Shows: "Enter the 6-digit code sent to {email}"
+  → Note below: "In test mode, enter any 6 digits"
+  → POST /api/auth/verify-otp
+  → Backend returns {access_token, user}
+  → authStore.setToken(access_token)
+  → authStore.setUser(user)
+  → authStore.setAuthenticated(true)
+  → if !user.onboarding_completed → navigate('/onboarding')
+  → if user.onboarding_completed → navigate('/app/signals')
+```
+
+### 4.3 Login Flow
+
+```
+User fills login form
+  → POST /api/auth/login
+  → {access_token, user}
+  → Store token in authStore
+  → if !user.onboarding_completed → navigate('/onboarding')
+  → if user.onboarding_completed → navigate('/app/signals')
+```
+
+### 4.4 Protected Routes (App.tsx)
+
+```tsx
+const RequireAuth = ({ children }) => {
+  const { isAuthenticated } = useAuthStore()
+  // CRITICAL: redirect to /login NOT to /
+  if (!isAuthenticated)
+    return <Navigate to="/login" replace />
+  return children
+}
+
+const RequireOnboarding = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore()
+  if (!isAuthenticated)
+    return <Navigate to="/login" replace />
+  if (!user?.onboarding_completed)
+    return <Navigate to="/onboarding" replace />
+  return children
+}
+
+<Routes>
+  {/* Public marketing */}
+  <Route path="/" element={<HomePage />} />
+  <Route path="/how-it-works" element={<HowItWorksPage />} />
+  <Route path="/pricing" element={<PricingPage />} />
+  <Route path="/about" element={<AboutPage />} />
+  <Route path="/blog" element={<BlogPage />} />
+  <Route path="/contact" element={<ContactPage />} />
+
+  {/* Auth */}
+  <Route path="/register" element={<RegisterPage />} />
+  <Route path="/login" element={<LoginPage />} />
+  <Route path="/verify-otp" element={<OTPPage />} />
+
+  {/* Onboarding (needs auth, not onboarding) */}
+  <Route path="/onboarding" element={
+    <RequireAuth><OnboardingPage /></RequireAuth>
+  } />
+
+  {/* App (needs auth + onboarding done) */}
+  <Route path="/app" element={
+    <RequireOnboarding><AppLayout /></RequireOnboarding>
+  }>
+    <Route index element={<Navigate to="/app/signals" />} />
+    <Route path="signals" element={<SignalsPage />} />
+    <Route path="watch-zones" element={<WatchZonesPage />} />
+    <Route path="discover" element={<DiscoverPage />} />
+    <Route path="replies" element={<RepliesPage />} />
+    <Route path="account" element={<AccountPage />} />
+  </Route>
+
+  <Route path="*" element={<Navigate to="/" />} />
+</Routes>
+```
+
+---
+
+## PHASE 5 — ONBOARDING (5 Steps)
+
+```
+Step 1 — Region
+  🇮🇳 India Edition [LIVE — teal border selected]
+  🇸🇦 GCC Edition [BETA badge]
+  🇸🇬 SEA Edition [COMING SOON — disabled, opacity-50]
+  Progress: 1/5
+
+Step 2 — Industry
+  Fetch GET /api/industries
+  2-column grid of industry cards
+  Multi-select with teal checkmark
+  Search box to filter
+  Progress: 2/5
+
+Step 3 — Sub-sectors
+  Fetch sub-sectors for each selected industry
+  Chips to toggle
+  Progress: 3/5
+
+Step 4 — Business Profile
+  Business name, description, WhatsApp (+91 prefix)
+  Progress: 4/5
+
+Step 5 — Launch
+  "🚀 Launch My NAZAR" button
+  onClick:
+    1. PATCH /api/users/me {
+         onboarding_completed: true,
+         industry: selectedIndustries[0],
+         sub_sectors: selectedSectors,
+         business_name: businessName,
+         business_description: description,
+         phone: phone
+       }
+    2. authStore.setUser({...user, onboarding_completed: true})
+    3. navigate('/app/signals')
+  Progress: 5/5
+```
+
+---
+
+## PHASE 6 — FRONTEND APP PAGES
+
+### NazarEye Component
+
+Animated Living Eye logo:
+```
+3 concentric pulse rings (teal on light, mint on dark)
+Eye blinks every 5 seconds
+Pupil moves every 8 seconds
+Subtle float animation
+
+CSS animations:
+@keyframes pulseEye {
+  0%   { transform:scale(0.85); opacity:0.9; }
+  50%  { transform:scale(1.15); opacity:0.2; }
+  100% { transform:scale(1.4);  opacity:0; }
+}
+@keyframes blink {
+  0%,90%,100% { transform:scaleY(1); }
+  95%         { transform:scaleY(0.08); }
+}
+@keyframes floatEye {
+  0%,100% { transform:translateY(0); }
+  50%     { transform:translateY(-3px); }
+}
+@keyframes pupilMove {
+  0%,100% { transform:translate(0,0); }
+  20%     { transform:translate(2px,0); }
+  40%     { transform:translate(-1px,-1px); }
+  60%     { transform:translate(1px,1px); }
+  80%     { transform:translate(-2px,0); }
+}
+
+Props: size (sm/md/lg/xl), theme (light/dark)
+Light: dark eye border + teal rings
+Dark:  white eye border + mint rings
+```
+
+### AppLayout
+
+```
+Desktop: max-width 480px centered on #EDE8DF bg
+Mobile:  full width
+
+TopBar (sticky, 52px):
+  NazarEye (sm) + "Nazar" wordmark
+  Right: green dot + "Live"
+
+Content: flex-1, overflow-y:auto, pb-20
+
+Bottom Nav (fixed, safe-area-inset-bottom):
+  5 tabs: Watch Zones | Signals | Discover | Replies | Account
+  Active: teal icon + label
+  Unread badge on Signals tab
+```
+
+### Signals Page (/app/signals)
+
+```
+Stats cards (2×2):
+  Total signals · Hot today · High intent · Unread
+
+Language filter pills (horizontal scroll):
+  🇮🇳 Hindi · Hinglish · English · Tamil · Telugu
+
+Tab bar:
+  🔴 Hot | All | Switching | ⭐ Saved | ✓ Replied
+
+Signal cards:
+  Heat bar top (3px):
+    Red gradient: BUYING · score 80+
+    Amber gradient: SWITCHING · score 60-79
+    Teal gradient: HELP_SEEKING
+
+  Meta: flag + language + platform + time
+  Post title (14px bold)
+  Translation (if Hindi/Tamil/Telugu)
+  Type chip + meter bar + score
+  AI Summary (purple block "✦ Nazar reads:")
+  Buttons: "⚡ Find this customer" + star + archive
+```
+
+### Watch Zones Page (/app/watch-zones)
+
+```
+Dark header card:
+  from-[#1A1410] to-[#0A2E23]
+  "👁️ Nazar is watching" label
+  "{N} Watch Zones" large count
+  Stats: signals · hot · industries
+
+"＋ Add Watch Zone" teal button
+
+Watch Zone cards:
+  Top border:
+    Red (3px): HOT
+    Teal (3px): Active
+    Warm (faded): Paused
+  Status badge + zone name
+  Platform dots (colored circles)
+  Signal count + "N new" badge
+```
+
+### Discover Page (/app/discover)
+
+```
+"India Problem Intelligence"
+Filter: This Week | Industry | Language
+
+Problem cards:
+  Rank number (large, muted)
+  Opportunity score (teal, large)
+  Problem title + industry tag
+  Complaint count + growth %
+  2 sample quotes
+  "Explore Problem →" button
+
+Connect to: GET /api/discover/problems
+```
+
+### Account Page (/app/account)
+
+```
+Avatar (initials, teal bg) + name + email
+Plan badge + edition
+
+Usage bars:
+  Signals this month: X/Y
+  Watch Zones: X/Y
+  <60%: teal · 60-80%: amber · >80%: red
+
+Billing section (pricing from pricing.ts)
+Settings: alerts, preferences
+Sign Out (red)
+```
+
+---
+
+## PHASE 7 — MARKETING WEBSITE
+
+### index.html (SEO + Favicon)
+
+```html
+<title>Nazar — Find Your Customers Before Anyone Else Does</title>
+<meta name="description" content="Nazar monitors the
+internet in Hindi, Hinglish, Tamil and Telugu. Get
+WhatsApp alerts the moment someone is ready to buy.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://the-nazar.com">
+<meta property="og:title"
+  content="Nazar — Find Your Customers Before Anyone Else">
+<meta property="og:url" content="https://the-nazar.com">
+
+<!-- Living Eye Favicon -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>
+  <rect width='32' height='32' rx='8' fill='%230F6E56'/>
+  <ellipse cx='16' cy='16' rx='12' ry='8'
+    stroke='white' stroke-width='2' fill='none'/>
+  <circle cx='16' cy='16' r='4.5' fill='white'/>
+  <circle cx='16' cy='16' r='2' fill='%230F6E56'/>
+  <circle cx='17.5' cy='14.5' r='1' fill='white'/>
+</svg>">
+```
+
+### Navbar (components/marketing/Navbar.tsx)
+
+```
+Fixed, 64px height
+bg: rgba(250,247,242,0.95) + backdrop-blur
+Border-bottom: 1px rgba(0,0,0,0.06)
+
+Left: NazarEye (sm, light) + "Nazar" (Outfit 900, 22px)
+      Click → navigate('/')
+
+Center (hide on mobile):
+  Home | How It Works | Pricing & Features |
+  About | Blog | Contact
+  DM Sans 500, 13px, #6B6560
+  Hover/active: #0F6E56
+
+Right:
+  "Sign In" ghost button → /login
+  "Get Started Free" teal button → /register
+
+Mobile: hamburger → slide-in menu
+```
+
+### Footer (components/marketing/Footer.tsx)
+
+```
+Background: #120F0C
+4 columns → 2 on tablet → 1 on mobile
+
+Column 1 — Brand:
+  NazarEye (sm, dark) + "Nazar" white
+  "Your market never sleeps. Neither does Nazar."
+  Social buttons (36px, teal on hover):
+    𝕏 | LinkedIn | Instagram | YouTube | 📱 WhatsApp
+  "🇮🇳 Made in India · Hyderabad" pill
+
+Column 2 — Product:
+  How It Works → /how-it-works
+  Pricing → /pricing
+  Signal Mode → /
+  Discover Mode → /
+  API Access (coming soon amber badge)
+  GCC Edition (coming soon amber badge)
+  SEA Edition (coming soon amber badge)
+
+Column 3 — Company:
+  About Nazar → /about
+  Blog → /blog
+  Contact → /contact
+
+Column 4 — Contact:
+  support@the-nazar.com (mailto link)
+  sales@the-nazar.com
+  billing@the-nazar.com
+
+Bottom bar:
+  © 2026 The-Nazar.com · Prodigious Digital Solutions
+  Right: Contact link ONLY
+  NO legal page links
+```
+
+### HomePage (/) — WOW HOMEPAGE
+
+Build these 10 sections in exact order:
+
+SECTION 1 — HERO
+```
+min-height: 100vh, cream bg, teal radial gradient
+NazarEye (lg, light) centered and animated
+
+Eyebrow pill: live red dot + "India's first buyer
+intent monitor · the-nazar.com"
+
+H1 (Outfit 900, clamp 36px-72px, letter-spacing -2px):
+  "Your next customer just posted
+   on the internet.
+   Did you see it?"
+  "Did you see it?" → teal color (#0F6E56)
+
+Subtext (DM Sans, clamp 15px-19px):
+  "Every day thousands of Indians post in Hindi,
+   Hinglish, Tamil and Telugu saying they need exactly
+   what you sell. Nazar finds them on WhatsApp —
+   before your competitor does."
+
+Two CTA buttons:
+  Primary: "Start Free — No Card Needed →" (teal)
+  Ghost:   "See How It Works ↓"
+  Stack vertically on mobile (< 480px)
+
+Social proof (12px, muted):
+  "👁️ 247 signals found today · 🇮🇳 India-first ·
+   ⚡ Alerts in under 2 minutes · ₹0 to start"
+
+ROTATING DEMO CARD (max-width 480px, centered):
+  Label: red live-dot + "Found 3 minutes ago"
+  White card, shadow, border-radius 18px
+
+  4 signals rotate every 4 seconds:
+
+  Signal 1 (red, 91, BUYING NOW):
+    Platform: Reddit · Hinglish · 🇮🇳
+    "Yaar affordable CRM chahiye —
+     Zoho too complex hai hamari startup ke liye"
+    Trans: "Need affordable CRM — too complex"
+    AI: "Founder comparing CRM tools. High intent."
+
+  Signal 2 (amber, 78, HELP-SEEKING):
+    Platform: Quora · English · 🇬🇧
+    "Best freight forwarding from UAE to India?"
+    AI: "Importer seeking freight partner. Urgent."
+
+  Signal 3 (teal, 74, SEEKING ADVICE):
+    Platform: Telegram · Tamil · 🇮🇳
+    "NEET coaching recommend panunga Chennai la"
+    Trans: "Recommend NEET coaching in Chennai"
+    AI: "Student seeking coaching. High value."
+
+  Signal 4 (red, 85, BUYING NOW):
+    Platform: IndiaMART · Hindi · 🇮🇳
+    "Bulk packaging supplier chahiye 2 weeks mein"
+    Trans: "Need bulk packaging in 2 weeks"
+    AI: "Order ready. Urgent timeline."
+
+  Transition: fade out 0.3s → swap → fade in 0.5s
+```
+
+SECTION 2 — PROBLEM (dark bg #1A1410)
+```
+Eyebrow: mint color "The problem nobody is solving"
+H2 white: "The Indian internet is speaking.
+           Your business cannot hear it."
+
+3 dark glass cards:
+  01 · 😤 You are always too late
+       "Indian buyers post, wait 2-4 hours, and move on..."
+
+  02 · 🔤 You don't speak their language
+       "47% of Indian buyer intent posts are in Hindi
+        or Hinglish. Every existing tool monitors
+        only English..."
+
+  03 · 🌊 The internet is too vast
+       "Millions of posts daily. You cannot monitor
+        manually. You need a system that never sleeps."
+
+Below grid:
+  "Nazar solves all three. Automatically." (mint, Outfit 900)
+  "Start Monitoring the Internet →" teal button → /register
+```
+
+SECTION 3 — LIVE DASHBOARD PREVIEW (dark teal #0A2E23)
+```
+Eyebrow: mint "Live product preview"
+H2 white: "Signal Mode + Discover Mode.
+           Both working for you, always."
+
+Dark glass frame with:
+  Top bar: NazarEye (dark) + green "Live" dot
+
+  Two-column body (1 col on mobile):
+
+  LEFT — Signal Mode:
+    "👁️ SIGNAL MODE" + red badge "9 new"
+    4 mini signal cards
+    Auto-animation: new card slides in every 5s
+    Each card: platform + score + title + lang/time
+
+  RIGHT — Discover Mode:
+    "🔭 DISCOVER MODE" + mint badge
+    3 discover cards:
+      01 GST Filing for Indian SMBs (94)
+         847 complaints · 🔴 Spiking +23%
+      02 Teaching Jobs — No Verified Platform (88)
+         623 complaints · 📈 Growing +18%
+      03 Freelancer Payments India → Global (82)
+         412 complaints · 📈 Growing +31%
+```
+
+SECTION 4 — DISCOVER MODE DEEP DIVE (dark gradient)
+```
+Background: linear-gradient(135deg, #0A2E23, #1A1410)
+Eyebrow: mint "Discover Mode — for builders"
+
+H2 white: "Don't just find customers.
+           Find your next product idea."
+
+Subtext: "Nazar's Discover Mode scans thousands of
+          complaints and questions on the Indian internet
+          every week. It surfaces the biggest unsolved
+          problems — ranked by opportunity score."
+
+6-card grid:
+
+Cards 1-5 (dark glass problem cards):
+  Rank (large muted), opportunity score (mint)
+  Title, description, stats tags, complaint quote
+
+  1. GST Filing (94) · 847 complaints
+  2. Teaching Jobs (88) · 623 complaints
+  3. E-commerce Logistics Tier-2 (82) · 412 complaints
+  4. Online Tutoring Regional Lang (79) · 523 complaints
+  5. Local Business Digital Marketing (76) · 398 complaints
+
+Card 6 (CTA card):
+  🔭 "New problems discovered weekly"
+  "Nazar publishes India's top unsolved market
+   problems every Monday at 9 AM IST."
+  Amber button: "Explore Discover Mode →" → /register
+```
+
+SECTION 5 — HOW IT WORKS (cream bg)
+```
+3 step cards:
+  01 👁️ Tell Nazar what you sell
+  02 🔍 Nazar monitors the internet
+  03 📱 WhatsApp alert in 2 minutes
+
+"See Full Walkthrough →" → /how-it-works
+```
+
+SECTION 6 — WHO IS IT FOR (soft bg #F0EBE3)
+```
+6 cards:
+  🖥️ SaaS Founders
+  🚚 Logistics Companies
+  📚 EdTech Platforms
+  🛍️ D2C Brands
+  ⚖️ CA / Legal Firms
+  🏗️ Any B2B Service
+White cards, hover: teal border + shadow
+```
+
+SECTION 7 — STATS (solid teal bg #0F6E56)
+```
+4 stats: 500M+ | 47% | 2 min | ₹0
+With labels below each
+```
+
+SECTION 8 — TESTIMONIALS (cream)
+```
+3 cards (★★★★★):
+  Arjun S. — SaaS Founder, Bangalore
+  Rahul K. — EdTech Founder, Hyderabad
+  Priya M. — Logistics Company, Mumbai
+```
+
+SECTION 9 — GCC + SEA COMING SOON (dark bg #1A1410)
+```
+Eyebrow: amber "Expanding soon"
+H2 white: "India is just the beginning."
+
+3 cards:
+
+🇸🇦 GCC Edition (COMING SOON ribbon — amber)
+  Saudi Arabia, UAE, Qatar
+  Arabic + English · SAR/AED · Q4 2026
+
+🇸🇬 SEA Edition (COMING SOON ribbon)
+  Singapore, Malaysia, Indonesia
+  English + Malay · SGD/MYR · Q2 2027
+
+CTA card:
+  🌏 "Get notified on launch"
+  "Early access users get 50% off for 3 months"
+  Amber button: "Notify Me → Early Access" → /register
+```
+
+SECTION 10 — FINAL CTA (dark bg #1A1410)
+```
+NazarEye (xl, dark) animated centered
+
+H2 white (Outfit 900):
+  "Your market never sleeps.
+   Neither does Nazar."
+
+Subtext: "Start free today. No credit card needed."
+
+Large white button: "Start Finding Customers — Free →"
+  → /register
+
+Sub-line (muted): "₹0 to start · Cancel anytime ·
+  🇮🇳 India-first · WhatsApp alerts"
+```
+
+### Register Page (/register)
+
+```
+Full page: warm bg #EDE8DF
+Centered white card (max-width 440px, shadow)
+
+Top: "← Back to home" link → navigate('/')
+
+NazarEye (md, light) + "Nazar" wordmark
+
+Title: "Start finding customers"
+Sub: "Free plan · No credit card needed"
+
+Google button:
+  Google G SVG icon + "Continue with Google"
+  onClick: toast("Google login coming soon!
+                  Please use email registration.")
+
+Divider: "or sign up with email"
+
+Form fields (ALL 16px font-size minimum for iOS):
+  Full Name
+  Email Address
+  WhatsApp: +91 prefix pill + number input
+    Hint: "We'll send WhatsApp alerts..."
+  Password (min 8 chars)
+
+"Create Account →" teal full-width button
+  → POST /api/auth/register
+  → navigate('/verify-otp')
+
+OTP note (teal-light box):
+  📧 "A 6-digit verification code will be sent
+      to your email. Check your inbox."
+  (In test mode: any 6 digits will work)
+
+Terms line: "By signing up you agree to our
+  Terms & Privacy Policy." → /contact
+
+"Already have an account? Sign in here" → /login
+```
+
+### Other Marketing Pages
+
+All have: Navbar + content + Footer (with Made in India)
+NO legal pages (no /privacy, /terms, /refund)
+
+How It Works (/how-it-works):
+  4 detailed steps with visual examples
+  Teal CTA banner at bottom
+
+Pricing (/pricing):
+  Monthly/Annual toggle (useState)
+  6 plan cards from pricing.ts config
+  Features comparison table
+  14-question FAQ accordion (what is signal,
+  what is discover, cancel anytime, OTP etc)
+
+About (/about):
+  Story, mission, 3 value cards
+  Team: Sameer Quadri, Hyderabad
+  Made in India highlight
+
+Blog (/blog):
+  6 blog cards + newsletter signup
+
+Contact (/contact):
+  support@the-nazar.com
+  billing@the-nazar.com
+  sales@the-nazar.com
+  WhatsApp chat link
+  Contact form (Name, Email, Subject, Message)
+
+---
+
+## PHASE 8 — RESPONSIVE (ALL DEVICES)
+
+Rules for every page:
+```css
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { overflow-x: hidden; max-width: 100vw; }
+
+/* All inputs 16px minimum — prevents iOS zoom */
+input, select, textarea { font-size: 16px; }
+
+/* App wrapper */
+.app-container {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Bottom nav safe area */
+.bottom-nav {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+}
+
+/* Content clears bottom nav */
+.page-content { padding-bottom: 90px; }
+```
+
+Test breakpoints:
+  375px — iPhone SE
+  390px — iPhone 14
+  430px — iPhone Pro Max
+  768px — iPad
+  1280px — Desktop
+
+---
+
+## PHASE 9 — DEPLOY ON RENDER.COM
+
+### Why Render instead of Railway
+
+```
+Render.com is simpler and more stable:
+✅ Free tier available (750 hours/month)
+✅ Free PostgreSQL (90 days then $7/month)
+✅ Free Redis available
+✅ Auto-deploy from GitHub
+✅ No credit card for free tier
+✅ Much simpler setup than Railway
+✅ Better free tier stability
+✅ No nixpacks build issues
+```
+
+### render.yaml (backend/)
+
+```yaml
+services:
+  - type: web
+    name: nazar-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0
+      --port $PORT --workers 2
+    envVars:
+      - key: APP_NAME
+        value: Nazar
+      - key: ENVIRONMENT
+        value: production
+      - key: TEST_MODE
+        value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: nazar-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: nazar-redis
+          type: redis
+          property: connectionString
+
+  - type: worker
+    name: nazar-celery-worker
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      celery -A app.tasks.scrape_watch_zones
+      worker --loglevel=info --concurrency=2
+
+  - type: worker
+    name: nazar-celery-beat
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      celery -A app.tasks.scrape_watch_zones
+      beat --loglevel=info
+
+databases:
+  - name: nazar-db
+    databaseName: nazar
+    user: nazar
+    plan: free
+
+```
+
+### Render Setup Steps
+
+```
+1. Push backend/ to GitHub
+   git init
+   git add .
+   git commit -m "Nazar backend"
+   git remote add origin https://github.com/sameer/nazar-backend
+   git push -u origin main
+
+2. Go to render.com → New → Web Service
+   Connect GitHub repo
+   Select backend/ as root directory
+
+3. Set environment variables in Render dashboard:
+   SECRET_KEY      = [python -c "import secrets; print(secrets.token_hex(32))"]
+   FRONTEND_URL    = https://the-nazar.com
+   BACKEND_URL     = https://nazar-api.onrender.com
+   ANTHROPIC_API_KEY = your_key
+   SERPAPI_KEY     = your_key
+   RAZORPAY_KEY_ID = your_key
+   RAZORPAY_KEY_SECRET = your_key
+   AISENSY_API_KEY = your_key
+   RESEND_API_KEY  = your_key
+   EMAIL_FROM      = signals@the-nazar.com
+
+4. Add custom domain: api.the-nazar.com
+   Add CNAME in GoDaddy DNS:
+   api → nazar-api.onrender.com
+```
+
+### Vercel Setup (Frontend)
+
+```
+vercel.json:
+{
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [{"source":"/(.*)",
+                "destination":"/index.html"}]
+}
+
+frontend/.env.production:
+VITE_API_URL=https://api.the-nazar.com
+VITE_APP_NAME=Nazar
+VITE_RAZORPAY_KEY_ID=rzp_live_xxx
+
+Deploy:
+  Push frontend/ to GitHub
+  Import in vercel.com
+  Add domain: the-nazar.com
+```
+
+### GoDaddy DNS Records
+
+```
+A     @    76.76.21.21              (Vercel)
+CNAME www  cname.vercel-dns.com
+CNAME api  nazar-api.onrender.com  (Render backend)
+```
+
+### Public Files
+
+public/sitemap.xml:
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://the-nazar.com/</loc>
+    <priority>1.0</priority></url>
+  <url><loc>https://the-nazar.com/pricing</loc>
+    <priority>0.9</priority></url>
+  <url><loc>https://the-nazar.com/how-it-works</loc>
+    <priority>0.8</priority></url>
+  <url><loc>https://the-nazar.com/about</loc>
+    <priority>0.7</priority></url>
+  <url><loc>https://the-nazar.com/blog</loc>
+    <priority>0.8</priority></url>
+  <url><loc>https://the-nazar.com/contact</loc>
+    <priority>0.6</priority></url>
+  <url><loc>https://the-nazar.com/register</loc>
+    <priority>0.7</priority></url>
+</urlset>
+```
+
+public/robots.txt:
+```
+User-agent: *
+Allow: /
+Disallow: /app/
+Disallow: /admin/
+Disallow: /api/
+Sitemap: https://the-nazar.com/sitemap.xml
+```
+
+---
+
+## CONTENT RULES — NON-NEGOTIABLE
+
+```
+✅ ALWAYS:
+  "Monitor the internet"
+  "Watch Zone" (capital W, capital Z)
+  "signal" or "buyer signal"
+  "Find this customer"
+  "the-nazar.com"
+  "India-first"
+  Made in India in footer
+  support@the-nazar.com in contact
+
+❌ NEVER:
+  Name any platform in marketing copy
+  Say "leads" → say "signals"
+  Say "pain points"
+  Say "monitor" for Watch Zones
+  Name any competitor
+  Say Arabic in languages (India launch only)
+  Show legal pages (no /privacy, /terms, /refund)
+  Show careers page
+  Hardcode prices anywhere (use pricing.ts)
+```
+
+---
+
+## FINAL CHECKLIST BEFORE DONE
+
+```
+BACKEND (test_backend.py must pass):
+[ ] /health returns {status:"ok",app:"Nazar"}
+[ ] Register → OTP email logs to console
+[ ] OTP verify → returns access_token
+[ ] Login → returns access_token
+[ ] Protected routes return 401 without token
+[ ] Watch zones CRUD works
+[ ] Free plan blocks 3rd watch zone
+[ ] Starter plan allows 10 watch zones
+[ ] Signals list works
+[ ] SerpApi scraper returns real results
+[ ] Signal scoring returns 0-100 strength
+[ ] WhatsApp alert logs to console (TEST_MODE)
+[ ] Email logs to console (TEST_MODE)
+[ ] Celery runs every 5 min (TEST_MODE)
+[ ] TEST_MODE=true in test-mode-status
+[ ] All migrations applied cleanly
+[ ] No psycopg2 — only pg8000
+
+FRONTEND AUTH FLOW:
+[ ] Register → /verify-otp (NOT to home)
+[ ] OTP verify → /onboarding (NOT to home)
+[ ] Onboarding all 5 steps save data
+[ ] Launch button → PATCH onboarding_completed
+[ ] After onboarding → /app/signals
+[ ] Login → /app/signals (if onboarding done)
+[ ] Login → /onboarding (if not done)
+[ ] Token survives page refresh
+[ ] Protected routes redirect to /login NOT /
+[ ] No horizontal scroll on iPhone SE (375px)
+[ ] All inputs 16px (no iOS zoom)
+[ ] Bottom nav above iPhone home bar
+
+HOMEPAGE WOW FACTOR:
+[ ] NazarEye animates (blink + pupil + rings)
+[ ] Demo signal card rotates every 4 seconds
+[ ] Live feed adds item every 5 seconds
+[ ] All 10 sections in correct order
+[ ] Discover Mode section visible
+[ ] GCC + SEA coming soon cards show
+[ ] Google button shows "coming soon" toast
+[ ] Made in India in footer
+[ ] Social media buttons with hover
+[ ] Favicon visible in browser tab
+
+PRICING:
+[ ] Free: 3 signals (not 15)
+[ ] Starter: ₹999 / 100 signals
+[ ] Growth: ₹2,499 / 500 signals
+[ ] All prices from pricing.ts config
+[ ] Annual toggle works (-20%)
+[ ] No hardcoded prices anywhere
+
+DEPLOY:
+[ ] Backend live on Render.com
+[ ] api.the-nazar.com CNAME → Render
+[ ] Frontend on Vercel
+[ ] the-nazar.com → Vercel
+[ ] /health returns ok on production URL
+[ ] TEST_MODE=false in production
+
+SEO:
+[ ] /sitemap.xml accessible
+[ ] /robots.txt accessible
+[ ] Meta tags in index.html
+[ ] OG tags for social sharing
+[ ] Google Search Console submitted
+```
+
+---
+
+## BUILD ORDER — DO NOT SKIP STEPS
+
+```
+1. Backend Phase 1 (models, auth, routes)
+   → Run test_backend.py
+   → ALL critical tests must pass before next step
+
+2. Backend Phase 2 (scrapers, scoring)
+   → Test scraper returns real results
+   → Test scoring returns valid scores
+
+3. Backend Phase 3 (WhatsApp, email, Razorpay)
+   → Test all services log to console correctly
+
+4. Frontend: pricing.ts config (first!)
+5. Frontend: authStore.ts with persist
+6. Frontend: App.tsx routing
+7. Frontend: Register → OTP → Onboarding → App flow
+8. Frontend: App pages (Signals, Watch Zones, Discover)
+9. Frontend: Marketing pages (Wow Homepage last)
+10. Deploy backend to Render
+11. Deploy frontend to Vercel
+12. Run test_backend.py against production URL
+13. Test full flow end to end
+```
+
+---
+
+## START HERE
+
+Read this entire document.
+Use SWE-1.5 (FREE — zero API credits).
+Build Phase 1 backend first.
+Run test_backend.py after Phase 1.
+Fix all failures before proceeding.
+Build one phase at a time.
+Confirm each phase works before next.
+
