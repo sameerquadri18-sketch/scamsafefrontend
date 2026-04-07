@@ -566,24 +566,26 @@ export async function adminGetWhatsAppTemplates(token) {
 
 // ---------- Admin Invoice Management ----------
 export async function adminGetInvoices(token, page = 1, search = '') {
-  const params = new URLSearchParams({ token, page });
-  if (search) params.append('search', search);
-  const res = await api.get(`/admin/invoices?${params}`);
+  const res = await api.post(`/admin/invoices?token=${encodeURIComponent(token)}`, {
+    phone: search || '',
+    invoice_number: '',
+    limit: 50
+  });
   return res.data;
 }
 
 export async function adminGetInvoiceStats(token) {
-  const res = await api.get(`/admin/invoices/stats?token=${encodeURIComponent(token)}`);
+  const res = await api.post(`/admin/invoice-stats?token=${encodeURIComponent(token)}`);
   return res.data;
 }
 
 export async function adminCreateTestInvoice(token) {
-  const res = await api.post(`/admin/invoices/test?token=${encodeURIComponent(token)}`);
+  const res = await api.post(`/admin/test-invoice?token=${encodeURIComponent(token)}`);
   return res.data;
 }
 
 export async function adminDownloadInvoicePDF(token, invoiceNumber) {
-  const res = await api.get(`/admin/invoices/${invoiceNumber}/pdf?token=${encodeURIComponent(token)}`, { responseType: 'blob' });
+  const res = await api.get(`/admin/invoice-pdf/${invoiceNumber}?token=${encodeURIComponent(token)}`, { responseType: 'blob' });
   const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
   const a = document.createElement('a');
   a.href = url;
