@@ -589,6 +589,11 @@ export async function adminGetInvoiceStats(token) {
   return res.data;
 }
 
+export async function adminRecordPayment(token, phone, email, plan = 'family-vault', amount = 699000) {
+  const res = await api.post(`/admin/record-payment?token=${encodeURIComponent(token)}`, { phone, email, plan, amount });
+  return res.data;
+}
+
 export async function adminCreateTestInvoice(token) {
   const res = await api.post(`/admin/test-invoice?token=${encodeURIComponent(token)}`);
   return res.data;

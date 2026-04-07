@@ -63,8 +63,8 @@ export default function Pricing() {
     full_name: '',
     phone_number: phone || '',
     email: savedEmail || '',
-    city: '',
     pincode: '',
+    state: '',
   });
   const [billingErrors, setBillingErrors] = useState({});
   const [billingSaving, setBillingSaving] = useState(false);
@@ -101,7 +101,7 @@ export default function Pricing() {
     if (!billingData.phone_number.trim() || !/^[6-9]\d{9}$/.test(billingData.phone_number.replace(/\D/g, '').slice(-10))) errs.phone_number = 'Valid 10-digit number required';
     const emailErr = validateEmail(billingData.email);
     if (emailErr) errs.email = emailErr;
-    if (!billingData.city.trim()) errs.city = 'City is required';
+    if (!billingData.state.trim()) errs.state = 'State is required';
     if (!billingData.pincode.trim() || !/^\d{6}$/.test(billingData.pincode.trim())) errs.pincode = 'Valid 6-digit pincode required';
     if (!disclaimerAccepted) errs.disclaimer = 'You must accept the terms to proceed';
     return errs;
@@ -117,8 +117,8 @@ export default function Pricing() {
         full_name: billingData.full_name.trim(),
         phone_number: billingData.phone_number.trim(),
         email: billingData.email.trim().toLowerCase(),
-        city: billingData.city.trim(),
         pincode: billingData.pincode.trim(),
+        state: billingData.state.trim(),
         disclaimer_accepted: true,
       });
       // Also save email via existing endpoint for backward compat
@@ -452,21 +452,21 @@ export default function Pricing() {
                   {billingErrors.email && <p className="text-[10px] text-red-400 mt-1">{billingErrors.email}</p>}
                 </div>
 
-                {/* City + Pincode */}
+                {/* State + Pincode */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 block">City *</label>
+                    <label className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 block">State *</label>
                     <div className="flex items-center gap-2 bg-dark-bg border border-dark-border rounded-xl px-3 py-2.5">
                       <MapPin size={14} className="text-gray-500 flex-shrink-0" />
                       <input
                         type="text"
-                        value={billingData.city}
-                        onChange={(e) => { setBillingData(p => ({ ...p, city: e.target.value })); setBillingErrors(p => ({ ...p, city: undefined })); }}
-                        placeholder="City"
+                        value={billingData.state}
+                        onChange={(e) => { setBillingData(p => ({ ...p, state: e.target.value })); setBillingErrors(p => ({ ...p, state: undefined })); }}
+                        placeholder="State"
                         className="bg-transparent text-sm text-white placeholder-gray-500 outline-none flex-1 w-full"
                       />
                     </div>
-                    {billingErrors.city && <p className="text-[10px] text-red-400 mt-1">{billingErrors.city}</p>}
+                    {billingErrors.state && <p className="text-[10px] text-red-400 mt-1">{billingErrors.state}</p>}
                   </div>
                   <div>
                     <label className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1 block">Pincode *</label>

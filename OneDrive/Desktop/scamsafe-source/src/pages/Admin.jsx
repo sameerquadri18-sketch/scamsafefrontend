@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, CreditCard, BarChart3, Mail, Search, ChevronLeft, ChevronRight, Lock, LogOut, RefreshCw, Download, FileText, TrendingUp, Eye, Activity, Database, Server, CheckCircle, AlertTriangle, Settings, ToggleLeft, ToggleRight, MessageCircle, Phone, X, Send, Loader2 } from 'lucide-react';
-import { adminLogin, adminGetStats, adminGetUsers, adminGetPayments, adminGetScans, adminGetHealth, adminGetUserFull, adminSendWhatsApp, adminGetWhatsAppTemplates, adminGetInvoices, adminGetInvoiceStats, adminCreateTestInvoice, adminDownloadInvoicePDF } from '../utils/api';
+import { adminLogin, adminGetStats, adminGetUsers, adminGetPayments, adminGetScans, adminGetHealth, adminGetUserFull, adminSendWhatsApp, adminGetWhatsAppTemplates, adminGetInvoices, adminGetInvoiceStats, adminCreateTestInvoice, adminDownloadInvoicePDF, adminRecordPayment } from '../utils/api';
 import AutomationStatus from '../components/AutomationStatus';
 
 function StatCard({ icon: Icon, label, value, sub, color }) {
@@ -273,7 +273,7 @@ export default function Admin() {
 
   const formatDate = (d) => {
     if (!d) return '—';
-    try { return new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit' }); } catch { return d; }
+    try { return new Date(d + (d.includes('Z') || d.includes('+') ? '' : 'Z')).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }); } catch { return d; }
   };
 
   const toggleFeature = (key) => {
@@ -533,6 +533,20 @@ export default function Admin() {
                         <div className="flex items-center gap-1.5 justify-end">
                           <button onClick={() => handleViewUser(u.phone || u.phone_masked?.replace(/\*/g, ''))} title="View full details" className="p-1.5 rounded-lg bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-colors"><Eye size={14} /></button>
                           <button onClick={() => handleOpenWhatsApp(u.phone || u.phone_masked?.replace(/\*/g, ''))} title="Send WhatsApp" className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"><MessageCircle size={14} /></button>
+                          {(!u.payment || u.payment.status !== 'paid') && (
+                            <button onClick={async () => {
+                              const plan = prompt('Plan (shield / family-vault):', 'family-vault');
+                              if (!plan) return;
+                              const amt = prompt('Amount in ₹:', plan === 'family-vault' ? '6990' : '2388');
+                              if (!amt) return;
+                              const email = prompt('Customer email:', u.email || '');
+                              try {
+                                const r = await adminRecordPayment(tokenRef.current, u.phone, email || '', plan, parseInt(amt) * 100);
+                                alert(`Payment recorded! Invoice: ${r.invoice_number}\nAmount: ${r.amount}`);
+                                loadUsers(usersPage);
+                              } catch (e) { alert('Failed: ' + (e?.response?.data?.detail || e.message)); }
+                            }} title="Record Payment" className="p-1.5 rounded-lg bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 transition-colors"><CreditCard size={14} /></button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -623,19 +637,19 @@ export default function Admin() {
                 <div className="grid grid-cols-4 gap-4 mb-4">
                   <div className={`${P} p-4 text-center`}>
                     <p className="text-xs text-gray-500 uppercase mb-1">Total Revenue</p>
-                    <p className="text-xl font-bold text-accent-green">₹{(invoiceStats.total_revenue || 0).toLocaleString('en-IN')}</p>
+                    <p className="text-xl font-bold text-accent-green">₹{((invoiceStats.total_revenue || 0) / 100).toLocaleString('en-IN')}</p>
                   </div>
                   <div className={`${P} p-4 text-center`}>
-                    <p className="text-xs text-gray-500 uppercase mb-1">GST Collected</p>
-                    <p className="text-xl font-bold text-accent-orange">₹{(invoiceStats.total_gst || 0).toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-gray-500 uppercase mb-1">Total Invoices</p>
+                    <p className="text-xl font-bold text-white">{invoiceStats.total_invoices || 0}</p>
                   </div>
                   <div className={`${P} p-4 text-center`}>
                     <p className="text-xs text-gray-500 uppercase mb-1">Paid</p>
-                    <p className="text-xl font-bold text-accent-green">{invoiceStats.paid_count || 0}</p>
+                    <p className="text-xl font-bold text-accent-green">{invoiceStats.paid_invoices || 0}</p>
                   </div>
                   <div className={`${P} p-4 text-center`}>
                     <p className="text-xs text-gray-500 uppercase mb-1">Pending</p>
-                    <p className="text-xl font-bold text-accent-orange">{invoiceStats.pending_count || 0}</p>
+                    <p className="text-xl font-bold text-accent-orange">{invoiceStats.pending_invoices || 0}</p>
                   </div>
                 </div>
               )}
@@ -658,7 +672,6 @@ export default function Admin() {
                       <th className="text-left text-xs text-gray-500 font-medium p-4">Phone</th>
                       <th className="text-left text-xs text-gray-500 font-medium p-4">Plan</th>
                       <th className="text-left text-xs text-gray-500 font-medium p-4">Amount</th>
-                      <th className="text-left text-xs text-gray-500 font-medium p-4">GST</th>
                       <th className="text-left text-xs text-gray-500 font-medium p-4">Status</th>
                       <th className="text-right text-xs text-gray-500 font-medium p-4">PDF</th>
                     </tr></thead>
@@ -668,8 +681,7 @@ export default function Admin() {
                           <td className="p-4 text-sm font-medium text-white">{inv.invoice_number}</td>
                           <td className="p-4 text-sm text-gray-400">{inv.phone}</td>
                           <td className="p-4 text-xs text-gray-400">{inv.plan}</td>
-                          <td className="p-4 text-sm font-semibold text-white">₹{(inv.amount || 0).toLocaleString('en-IN')}</td>
-                          <td className="p-4 text-xs text-gray-400">₹{(inv.gst_amount || 0).toLocaleString('en-IN')}</td>
+                          <td className="p-4 text-sm font-semibold text-white">₹{((inv.total_amount || 0) / 100).toLocaleString('en-IN')}</td>
                           <td className="p-4"><span className={`text-xs px-2.5 py-1 rounded-full font-medium ${inv.status === 'paid' ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-orange/10 text-accent-orange'}`}>{inv.status}</span></td>
                           <td className="p-4 text-right">
                             <button onClick={() => handleDownloadPDF(inv.invoice_number)}
@@ -923,9 +935,23 @@ export default function Admin() {
                       <div className="flex flex-col gap-1">
                         {selectedUser.payments.map((p, i) => (
                           <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#060e1a] border border-gray-800/50 text-xs">
-                            <span className="text-gray-300">{p.plan} — ₹{p.amount}</span>
+                            <span className="text-gray-300">{p.plan} — ₹{p.amount / 100}</span>
                             <span className={`px-2 py-0.5 rounded-full font-medium ${p.status === 'paid' ? 'bg-accent-green/10 text-accent-green' : 'bg-gray-500/10 text-gray-400'}`}>{p.status}</span>
                             <span className="text-gray-600">{formatDate(p.paid_at || p.created_at)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedUser.family_members?.length > 0 && (
+                    <div>
+                      <h4 className="text-xs text-gray-500 font-semibold mb-2 uppercase">Family Members ({selectedUser.family_members.length})</h4>
+                      <div className="flex flex-col gap-1">
+                        {selectedUser.family_members.map((fm, i) => (
+                          <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-[#060e1a] border border-gray-800/50 text-xs">
+                            <span className="text-gray-300">{fm.name || 'No name'} — +91 ***{fm.phone?.slice(-4)}</span>
+                            <span className="text-gray-500">{fm.email || '—'}</span>
+                            <span className={`px-2 py-0.5 rounded-full font-medium ${fm.otp_verified ? 'bg-accent-green/10 text-accent-green' : 'bg-yellow-500/10 text-yellow-400'}`}>{fm.otp_verified ? 'Verified' : 'Unverified'}</span>
                           </div>
                         ))}
                       </div>
