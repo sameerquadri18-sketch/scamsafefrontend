@@ -1,111 +1,69 @@
-const CACHE_NAME = 'scamsafe-v1';
-const urlsToCache = [
-  '/',
-  '/dashboard',
-  '/login',
-  '/blog',
-  '/about',
-  '/contact',
-  '/pricing',
-  '/privacy',
-  '/terms',
-  '/disclaimer',
-  '/dpdp-act',
-  '/manifest.json',
-  '/favicon.svg',
-  '/icon-192.png',
-  '/icon-512.png'
-];
+// ScamSafe Service Worker v2 - Network-first strategy
+// This version clears all old caches on install to fix stale bundle issues
 
-// Install event - cache resources
+const CACHE_NAME = 'scamsafe-v2';
+
+// Install: skip waiting and clear ALL old caches
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-  );
+  self.skipWaiting();
 });
 
-// Fetch event - serve from cache when offline
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-
-        // Clone request
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then(
-          (response) => {
-            // Check if valid response
-            if(!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone response
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        ).catch(() => {
-          // Offline fallback for API requests
-          if (event.request.url.includes('/api/')) {
-            return new Response(
-              JSON.stringify({ error: 'Offline - Please check your connection' }),
-              { 
-                status: 503,
-                headers: { 'Content-Type': 'application/json' }
-              }
-            );
-          }
-          
-          // Offline fallback for HTML pages
-          if (event.request.headers.get('accept').includes('text/html')) {
-            return caches.match('/offline');
-          }
-        });
-      })
-  );
-});
-
-// Activate event - clean up old caches
+// Activate: claim clients immediately and purge old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
+        cacheNames.map((name) => {
+          console.log('Deleting cache:', name);
+          return caches.delete(name);
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
-    event.waitUntil(doBackgroundSync());
-  }
-});
+// Fetch: network-first — never serve stale HTML or JS from cache
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
 
-function doBackgroundSync() {
-  // Handle any queued offline actions
-  console.log('Background sync triggered');
-}
+  // Always go to network for navigation (HTML) and JS/CSS assets
+  if (event.request.mode === 'navigate' ||
+      url.pathname.endsWith('.js') ||
+      url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        // Only fall back to cache if network fails
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // For images and static assets: cache-first is fine
+  if (event.request.destination === 'image' ||
+      url.pathname.endsWith('.png') ||
+      url.pathname.endsWith('.svg') ||
+      url.pathname.endsWith('.ico')) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(event.request, clone));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Everything else: network-first
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
+  );
+});
 
 // Push notification handling
 self.addEventListener('push', (event) => {
@@ -114,36 +72,13 @@ self.addEventListener('push', (event) => {
     icon: '/icon-192.png',
     badge: '/favicon.svg',
     vibrate: [100, 50, 100],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'Open ScamSafe',
-        icon: '/icon-192.png'
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: '/icon-192.png'
-      }
-    ]
   };
-
   event.waitUntil(
     self.registration.showNotification('ScamSafe', options)
   );
 });
 
-// Notification click handling
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('https://scamsafe.in/dashboard')
-    );
-  }
+  event.waitUntil(clients.openWindow('https://scamsafe.in/dashboard'));
 });
