@@ -681,7 +681,7 @@ export default function Admin() {
                           <td className="p-4 text-sm font-medium text-white">{inv.invoice_number}</td>
                           <td className="p-4 text-sm text-gray-400">{inv.phone}</td>
                           <td className="p-4 text-xs text-gray-400">{inv.plan}</td>
-                          <td className="p-4 text-sm font-semibold text-white">₹{((inv.total_amount || 0) / 100).toLocaleString('en-IN')}</td>
+                          <td className="p-4 text-sm font-semibold text-white">₹{((inv.amount || 0) / 100).toLocaleString('en-IN')}</td>
                           <td className="p-4"><span className={`text-xs px-2.5 py-1 rounded-full font-medium ${inv.status === 'paid' ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-orange/10 text-accent-orange'}`}>{inv.status}</span></td>
                           <td className="p-4 text-right">
                             <button onClick={() => handleDownloadPDF(inv.invoice_number)}
