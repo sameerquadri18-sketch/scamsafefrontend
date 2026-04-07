@@ -500,6 +500,7 @@ export default function Admin() {
               <table className="w-full">
                 <thead><tr className="border-b border-gray-800 bg-[#0a1628]">
                   <th className="text-left text-xs text-gray-500 font-medium p-4">User</th>
+                  <th className="text-left text-xs text-gray-500 font-medium p-4">Status</th>
                   <th className="text-left text-xs text-gray-500 font-medium p-4">Scans</th>
                   <th className="text-left text-xs text-gray-500 font-medium p-4">Databases</th>
                   <th className="text-left text-xs text-gray-500 font-medium p-4">Removal</th>
@@ -510,11 +511,23 @@ export default function Admin() {
                 <tbody>
                   {filteredUsers.length > 0 ? filteredUsers.map((u, i) => (
                     <tr key={i} className="border-b border-gray-800/50 hover:bg-white/[0.02]">
-                      <td className="p-4"><p className="text-sm font-medium text-white">+91 {u.phone_masked}</p>{u.email && <p className="text-xs text-gray-500">{u.email}</p>}</td>
+                      <td className="p-4">
+                        <p className="text-sm font-medium text-white">+91 {u.phone_masked}</p>
+                        {u.email && <p className="text-xs text-gray-500">{u.email}</p>}
+                        {u.is_family_member && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-orange/10 text-accent-orange">Family of ***{u.family_owner_phone?.slice(-4)}</span>}
+                        {u.is_family_owner && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-purple/10 text-accent-purple ml-1">Family Owner</span>}
+                      </td>
+                      <td className="p-4">
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          u.status === 'Active' ? 'bg-accent-green/10 text-accent-green' :
+                          u.status === 'Active (Family)' ? 'bg-accent-orange/10 text-accent-orange' :
+                          'bg-gray-500/10 text-gray-400'
+                        }`}>{u.status || 'Inactive'}</span>
+                      </td>
                       <td className="p-4 text-sm text-gray-300">{u.scan_count}</td>
                       <td className="p-4"><span className="text-sm px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400">{u.databases_found}</span></td>
                       <td className="p-4">{u.removal ? <span className={`text-xs font-medium px-2 py-1 rounded-full ${u.removal.status === 'complete' ? 'bg-accent-green/10 text-accent-green' : 'bg-accent-orange/10 text-accent-orange'}`}>{u.removal.status} ({u.removal.progress}%)</span> : <span className="text-xs text-gray-600">—</span>}</td>
-                      <td className="p-4">{u.payment ? <span className={`text-xs font-medium px-2 py-1 rounded-full ${u.payment.status === 'paid' ? 'bg-accent-green/10 text-accent-green' : 'bg-gray-500/10 text-gray-400'}`}>{u.payment.status === 'paid' ? `₹${u.payment.amount / 100}` : 'Unpaid'}</span> : <span className="text-xs text-gray-600">—</span>}</td>
+                      <td className="p-4">{u.payment ? <span className={`text-xs font-medium px-2 py-1 rounded-full ${u.payment.status === 'paid' ? 'bg-accent-green/10 text-accent-green' : 'bg-gray-500/10 text-gray-400'}`}>{u.payment.status === 'paid' ? `₹${u.payment.amount / 100} · ${u.payment.plan}` : 'Unpaid'}</span> : <span className="text-xs text-gray-600">—</span>}</td>
                       <td className="p-4 text-xs text-gray-500 whitespace-nowrap">{formatDate(u.first_scan)}</td>
                       <td className="p-4 text-right whitespace-nowrap">
                         <div className="flex items-center gap-1.5 justify-end">
@@ -524,7 +537,7 @@ export default function Admin() {
                       </td>
                     </tr>
                   )) : (
-                    <tr><td colSpan={7} className="p-12 text-center text-gray-600">No users found</td></tr>
+                    <tr><td colSpan={8} className="p-12 text-center text-gray-600">No users found</td></tr>
                   )}
                 </tbody>
               </table>

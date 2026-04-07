@@ -8,7 +8,7 @@ import {
   AlertCircle, MailCheck, MailX, ExternalLink,
 } from 'lucide-react';
 import { useApp } from '../contexts/AppContext';
-import { getUserStatus, triggerRescan, sendChatMessage, isBackendLive, downloadDeletionCertificate, getRemovalStatus, getNotifications, markNotificationsRead, getScanLimit, getFamilyGroup, createFamilyGroup, addFamilyMember, removeFamilyMember } from '../utils/api';
+import { getUserStatus, triggerRescan, sendChatMessage, isBackendLive, downloadDeletionCertificate, getRemovalStatus, getNotifications, markNotificationsRead, getScanLimit, getFamilyGroup, createFamilyGroup, addFamilyMember, removeFamilyMember, sendFamilyMemberOTP, verifyFamilyMemberOTP } from '../utils/api';
 import ProtectionScore from '../components/ProtectionScore';
 // BreachIntelligence removed per business requirement
 import DeletionLog from '../components/DeletionLog';
@@ -44,8 +44,11 @@ export default function Dashboard() {
   const [familyGroup, setFamilyGroup] = useState(null);
   const [familyName, setFamilyName] = useState('');
   const [familyPhone, setFamilyPhone] = useState('');
+  const [familyEmail, setFamilyEmail] = useState('');
   const [familyLoading, setFamilyLoading] = useState(false);
   const [familyError, setFamilyError] = useState('');
+  const [familyOtpSent, setFamilyOtpSent] = useState(false);
+  const [familyOtp, setFamilyOtp] = useState('');
 
   // Compute stable removal counts (only once, not on every render)
   const { removedCount, totalCount } = useMemo(() => {
@@ -553,48 +556,98 @@ export default function Dashboard() {
                   </div>
                 ))}
 
-                {/* Add member form */}
+                {/* Add member form with OTP verification */}
                 {(familyGroup.member_count || 1) < 5 && (
                   <div className="mt-3 pt-3 border-t border-dark-border/50">
-                    <p className="text-[10px] text-gray-500 mb-2">Add Family Member</p>
+                    <p className="text-[10px] text-gray-500 mb-2">Add Family Member (OTP verified)</p>
                     <div className="flex flex-col gap-2">
                       <input
                         type="text"
                         value={familyName}
                         onChange={(e) => setFamilyName(e.target.value)}
-                        placeholder="Name (optional)"
-                        className="bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-accent-orange/50"
+                        placeholder="Member's name"
+                        disabled={familyOtpSent}
+                        className="bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-accent-orange/50 disabled:opacity-50"
                       />
-                      <div className="flex gap-2">
-                        <input
-                          type="tel"
-                          value={familyPhone}
-                          onChange={(e) => setFamilyPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                          placeholder="10-digit phone number"
-                          maxLength={10}
-                          className="flex-1 bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-accent-orange/50"
-                        />
+                      <input
+                        type="email"
+                        value={familyEmail}
+                        onChange={(e) => setFamilyEmail(e.target.value)}
+                        placeholder="Member's email (required)"
+                        disabled={familyOtpSent}
+                        className="bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-accent-orange/50 disabled:opacity-50"
+                      />
+                      <input
+                        type="tel"
+                        value={familyPhone}
+                        onChange={(e) => setFamilyPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        placeholder="10-digit phone number"
+                        maxLength={10}
+                        disabled={familyOtpSent}
+                        className="bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-accent-orange/50 disabled:opacity-50"
+                      />
+
+                      {!familyOtpSent ? (
                         <button
                           onClick={async () => {
                             if (!familyPhone || familyPhone.length !== 10) { setFamilyError('Enter a valid 10-digit number'); return; }
+                            if (!familyEmail || !familyEmail.includes('@')) { setFamilyError('Valid email is required'); return; }
                             setFamilyLoading(true);
                             setFamilyError('');
                             try {
-                              await addFamilyMember(userPhone, familyPhone, familyName);
-                              const g = await getFamilyGroup(userPhone);
-                              setFamilyGroup(g);
-                              setFamilyPhone('');
-                              setFamilyName('');
-                            } catch (e) { setFamilyError(e?.response?.data?.detail || 'Failed to add'); }
+                              await sendFamilyMemberOTP(userPhone, familyPhone, familyName, familyEmail);
+                              setFamilyOtpSent(true);
+                            } catch (e) { setFamilyError(e?.response?.data?.detail || 'Failed to send OTP'); }
                             setFamilyLoading(false);
                           }}
-                          disabled={familyLoading || familyPhone.length !== 10}
-                          className="bg-accent-orange/20 text-accent-orange px-3 py-2 rounded-lg text-xs font-medium hover:bg-accent-orange/30 transition-all disabled:opacity-40 flex items-center gap-1"
+                          disabled={familyLoading || familyPhone.length !== 10 || !familyEmail.includes('@')}
+                          className="bg-accent-orange/20 text-accent-orange px-3 py-2 rounded-lg text-xs font-medium hover:bg-accent-orange/30 transition-all disabled:opacity-40 flex items-center gap-1 justify-center"
                         >
-                          {familyLoading ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={12} />}
-                          Add
+                          {familyLoading ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
+                          Send OTP to Member
                         </button>
-                      </div>
+                      ) : (
+                        <div className="flex flex-col gap-2">
+                          <p className="text-[10px] text-accent-green">OTP sent to +91 {familyPhone}. Ask your family member for the code.</p>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={familyOtp}
+                              onChange={(e) => setFamilyOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                              placeholder="Enter 6-digit OTP"
+                              maxLength={6}
+                              className="flex-1 bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-xs text-white placeholder-gray-600 outline-none focus:border-accent-green/50"
+                            />
+                            <button
+                              onClick={async () => {
+                                if (!familyOtp || familyOtp.length !== 6) { setFamilyError('Enter 6-digit OTP'); return; }
+                                setFamilyLoading(true);
+                                setFamilyError('');
+                                try {
+                                  await verifyFamilyMemberOTP(userPhone, familyPhone, familyOtp, familyName, familyEmail);
+                                  const g = await getFamilyGroup(userPhone);
+                                  setFamilyGroup(g);
+                                  setFamilyPhone(''); setFamilyName(''); setFamilyEmail('');
+                                  setFamilyOtp(''); setFamilyOtpSent(false);
+                                } catch (e) { setFamilyError(e?.response?.data?.detail || 'OTP verification failed'); }
+                                setFamilyLoading(false);
+                              }}
+                              disabled={familyLoading || familyOtp.length !== 6}
+                              className="bg-accent-green/20 text-accent-green px-3 py-2 rounded-lg text-xs font-medium hover:bg-accent-green/30 transition-all disabled:opacity-40 flex items-center gap-1"
+                            >
+                              {familyLoading ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={12} />}
+                              Verify & Add
+                            </button>
+                          </div>
+                          <button
+                            onClick={() => { setFamilyOtpSent(false); setFamilyOtp(''); setFamilyError(''); }}
+                            className="text-[10px] text-gray-500 hover:text-gray-300 underline self-start"
+                          >
+                            Change details
+                          </button>
+                        </div>
+                      )}
+
                       {familyError && <p className="text-[10px] text-red-400">{familyError}</p>}
                     </div>
                   </div>

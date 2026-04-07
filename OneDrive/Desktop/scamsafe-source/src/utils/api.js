@@ -333,8 +333,18 @@ export async function createFamilyGroup(phone) {
   return res.data;
 }
 
-export async function addFamilyMember(phone, memberPhone, memberName = '') {
-  const res = await api.post('/family/add-member', { phone, member_phone: memberPhone, member_name: memberName });
+export async function addFamilyMember(phone, memberPhone, memberName = '', memberEmail = '') {
+  const res = await api.post('/family/add-member', { phone, member_phone: memberPhone, member_name: memberName, member_email: memberEmail });
+  return res.data;
+}
+
+export async function sendFamilyMemberOTP(ownerPhone, memberPhone, memberName = '', memberEmail = '') {
+  const res = await api.post('/family/send-member-otp', { owner_phone: ownerPhone, member_phone: memberPhone, member_name: memberName, member_email: memberEmail });
+  return res.data;
+}
+
+export async function verifyFamilyMemberOTP(ownerPhone, memberPhone, otp, memberName = '', memberEmail = '') {
+  const res = await api.post('/family/verify-member-otp', { owner_phone: ownerPhone, member_phone: memberPhone, otp, member_name: memberName, member_email: memberEmail });
   return res.data;
 }
 
