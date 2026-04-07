@@ -24,6 +24,23 @@ async function checkBackend() {
 // Reset backend check every 60s so it re-detects if backend comes up
 setInterval(() => { backendAvailable = null; }, 60000);
 
+// Add request interceptor to handle backend unavailability
+api.interceptors.request.use(async (config) => {
+  const isAvailable = await checkBackend();
+  if (!isAvailable && config.url !== '/health') {
+    // For demo purposes, return mock data when backend is unavailable
+    if (config.url?.includes('/scan/free')) {
+      return Promise.reject({
+        response: {
+          status: 503,
+          data: { error: 'Backend temporarily unavailable. Please try again later.' }
+        }
+      });
+    }
+  }
+  return config;
+});
+
 // ---------- Scan ----------
 export async function scanFree(phone, email) {
   const res = await api.post('/scan/free', { phone, email });
