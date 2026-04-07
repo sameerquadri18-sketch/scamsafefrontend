@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - ScamSafe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #080D18 0%, #0E1B2E 50%, #163558 100%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center">
+    <div class="text-center max-w-md mx-auto p-6">
+        <!-- Logo -->
+        <div class="mb-8">
+            <div class="w-20 h-20 mx-auto bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-4">
+                <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-white mb-2">ScamSafe</h1>
+            <p class="text-gray-400 text-sm">You're currently offline</p>
+        </div>
+
+        <!-- Offline Message -->
+        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 mb-6">
+            <div class="flex items-center justify-center mb-4">
+                <svg class="w-12 h-12 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path>
+                </svg>
+            </div>
+            <h2 class="text-lg font-semibold text-white mb-2">No Internet Connection</h2>
+            <p class="text-gray-400 text-sm mb-4">
+                Please check your internet connection and try again. Some features may be limited while offline.
+            </p>
+            <div class="space-y-2">
+                <button onclick="window.location.reload()" class="w-full bg-gradient-to-r from-orange-500 to-red-600 text-white py-3 px-4 rounded-xl font-medium hover:from-orange-600 hover:to-red-700 transition-all">
+                    Try Again
+                </button>
+                <button onclick="window.history.back()" class="w-full bg-gray-700 text-white py-3 px-4 rounded-xl font-medium hover:bg-gray-600 transition-all">
+                    Go Back
+                </button>
+            </div>
+        </div>
+
+        <!-- Available Features -->
+        <div class="bg-gray-800/30 border border-gray-700/50 rounded-xl p-4">
+            <h3 class="text-sm font-medium text-gray-300 mb-3">Available While Offline</h3>
+            <div class="space-y-2">
+                <div class="flex items-center gap-2 text-sm text-gray-400">
+                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    Previously loaded pages
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-400">
+                    <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    App interface
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-400">
+                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Real-time scans
+                </div>
+                <div class="flex items-center gap-2 text-sm text-gray-400">
+                    <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    Data removal requests
+                </div>
+            </div>
+        </div>
+
+        <!-- Help -->
+        <div class="mt-6 text-center">
+            <p class="text-xs text-gray-500">
+                Need help? <a href="mailto:support@scamsafe.in" class="text-orange-500 hover:text-orange-400">Contact Support</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Check connection status periodically
+        setInterval(() => {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }, 5000);
+
+        // Listen for connection changes
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+    </script>
+</body>
+</html>

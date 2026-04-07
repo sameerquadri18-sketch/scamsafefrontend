@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /scan
+Disallow: /results
+Disallow: /removal
+Disallow: /dashboard
+Disallow: /complete-profile
+Disallow: /reappearance
+
+Sitemap: https://scamsafe.in/sitemap.xml

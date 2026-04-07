@@ -1,0 +1,173 @@
+export const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
+
+export const BROKERS = [
+  // HIGH RISK — Data Brokers & Lead Gen
+  { id: 1, name: 'Digibrood.in', domain: 'digibrood.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 2, name: 'BinaryClues.com', domain: 'binaryclues.com', category: 'Lead Gen', risk: 'HIGH' },
+  { id: 3, name: 'DataSolutionsExperts.in', domain: 'datasolutionsexperts.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 4, name: 'DBToData.com', domain: 'dbtodata.com', category: 'Data Broker', risk: 'HIGH' },
+  { id: 5, name: 'LeadsMunch.com', domain: 'leadsmunch.com', category: 'Lead Gen', risk: 'HIGH' },
+  { id: 6, name: 'ExactData.in', domain: 'exactdata.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 7, name: 'InfoGroup.in', domain: 'infogroup.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 8, name: 'DataLeads.in', domain: 'dataleads.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 9, name: 'BuyDatabaseOnline.com', domain: 'buydatabaseonline.com', category: 'Data Broker', risk: 'HIGH' },
+  { id: 10, name: 'IndianDataHub.com', domain: 'indiandatahub.com', category: 'Data Broker', risk: 'HIGH' },
+  { id: 11, name: 'PhoneDataIndia.com', domain: 'phonedataindia.com', category: 'Data Broker', risk: 'HIGH' },
+  { id: 12, name: 'LeadsGuru.in', domain: 'leadsguru.in', category: 'Lead Gen', risk: 'HIGH' },
+  // MEDIUM RISK — Directories & Platforms
+  { id: 13, name: 'JustDial.com', domain: 'justdial.com', category: 'Directory', risk: 'MED' },
+  { id: 14, name: 'Sulekha.com', domain: 'sulekha.com', category: 'Directory', risk: 'MED' },
+  { id: 15, name: 'IndiaMART.com', domain: 'indiamart.com', category: 'B2B Platform', risk: 'MED' },
+  { id: 16, name: 'TradeIndia.com', domain: 'tradeindia.com', category: 'B2B Platform', risk: 'MED' },
+  { id: 17, name: 'ExportersIndia.com', domain: 'exportersindia.com', category: 'B2B Platform', risk: 'MED' },
+  { id: 18, name: '99acres.com', domain: '99acres.com', category: 'Real Estate', risk: 'MED' },
+  { id: 19, name: 'MagicBricks.com', domain: 'magicbricks.com', category: 'Real Estate', risk: 'MED' },
+  { id: 20, name: 'Housing.com', domain: 'housing.com', category: 'Real Estate', risk: 'MED' },
+  { id: 21, name: 'CommonFloor.com', domain: 'commonfloor.com', category: 'Real Estate', risk: 'MED' },
+  { id: 22, name: 'NoBroker.in', domain: 'nobroker.in', category: 'Real Estate', risk: 'MED' },
+  { id: 23, name: 'Netcore Cloud', domain: 'netcorecloud.com', category: 'Marketing DB', risk: 'MED' },
+  { id: 24, name: 'WebEngage', domain: 'webengage.com', category: 'Marketing DB', risk: 'MED' },
+  { id: 25, name: 'CleverTap', domain: 'clevertap.com', category: 'Marketing DB', risk: 'MED' },
+  { id: 26, name: 'Naukri.com', domain: 'naukri.com', category: 'Job Portal', risk: 'MED' },
+  { id: 27, name: 'Monster India', domain: 'monsterindia.com', category: 'Job Portal', risk: 'MED' },
+  { id: 28, name: 'Shine.com', domain: 'shine.com', category: 'Job Portal', risk: 'MED' },
+  { id: 29, name: 'TimesJobs.com', domain: 'timesjobs.com', category: 'Job Portal', risk: 'MED' },
+  { id: 30, name: 'PolicyBazaar.com', domain: 'policybazaar.com', category: 'Insurance', risk: 'MED' },
+  { id: 31, name: 'BankBazaar.com', domain: 'bankbazaar.com', category: 'Finance', risk: 'MED' },
+  { id: 32, name: 'Paytm Insider DB', domain: 'paytm.com', category: 'Fintech', risk: 'MED' },
+  // LOW RISK — Classifieds, Media, E-commerce
+  { id: 33, name: 'Quikr.com', domain: 'quikr.com', category: 'Classifieds', risk: 'LOW' },
+  { id: 34, name: 'OLX India', domain: 'olx.in', category: 'Classifieds', risk: 'LOW' },
+  { id: 35, name: 'ClickIndia.com', domain: 'clickindia.com', category: 'Classifieds', risk: 'LOW' },
+  { id: 36, name: 'Locanto.in', domain: 'locanto.in', category: 'Classifieds', risk: 'LOW' },
+  { id: 37, name: 'AajTak Promo DB', domain: 'aajtak.in', category: 'Media', risk: 'LOW' },
+  { id: 38, name: 'NDTV Marketing DB', domain: 'ndtv.com', category: 'Media', risk: 'LOW' },
+  { id: 39, name: 'Flipkart Seller DB', domain: 'flipkart.com', category: 'E-Commerce', risk: 'LOW' },
+  { id: 40, name: 'Amazon India Seller DB', domain: 'amazon.in', category: 'E-Commerce', risk: 'LOW' },
+  { id: 41, name: 'Snapdeal DB', domain: 'snapdeal.com', category: 'E-Commerce', risk: 'LOW' },
+  { id: 42, name: 'Zomato Data Leak', domain: 'zomato.com', category: 'Food/Data Leak', risk: 'LOW' },
+  // Caller ID
+  { id: 43, name: 'Truecaller', domain: 'truecaller.com', category: 'Caller ID', risk: 'HIGH' },
+  { id: 44, name: 'Eyecon', domain: 'eyecon.in', category: 'Caller ID', risk: 'MED' },
+  { id: 45, name: 'ShowCaller', domain: 'showcaller.com', category: 'Caller ID', risk: 'MED' },
+  { id: 46, name: 'CallApp', domain: 'callapp.com', category: 'Caller ID', risk: 'MED' },
+  { id: 47, name: 'Hiya', domain: 'hiya.com', category: 'Caller ID', risk: 'MED' },
+  { id: 48, name: 'Whoscall', domain: 'whoscall.com', category: 'Caller ID', risk: 'MED' },
+  // More data brokers
+  { id: 49, name: 'GetDataList', domain: 'getdatalist.com', category: 'Data Broker', risk: 'HIGH' },
+  { id: 50, name: 'FetchLeads', domain: 'fetchleads.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 51, name: 'LeadGuru', domain: 'leadguru.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 52, name: 'IndiaDataBank', domain: 'indiadatabank.com', category: 'Data Broker', risk: 'HIGH' },
+  { id: 53, name: 'DatabaseIndia', domain: 'databaseindia.in', category: 'Data Broker', risk: 'HIGH' },
+  { id: 54, name: 'PhoneListIndia', domain: 'phonelistindia.com', category: 'Data Broker', risk: 'HIGH' },
+  // Classifieds
+  { id: 55, name: 'Click.in', domain: 'click.in', category: 'Classifieds', risk: 'MED' },
+  { id: 56, name: 'UrbanPro', domain: 'urbanpro.com', category: 'Directory', risk: 'MED' },
+  // Business directories
+  { id: 57, name: 'Zauba Corp', domain: 'zaubacorp.com', category: 'Business Directory', risk: 'MED' },
+  { id: 58, name: 'Tofler', domain: 'tofler.in', category: 'Business Directory', risk: 'MED' },
+  // Breach APIs
+  { id: 59, name: 'HaveIBeenPwned', domain: 'haveibeenpwned.com', category: 'Breach Database', risk: 'HIGH' },
+  { id: 60, name: 'Dehashed', domain: 'dehashed.com', category: 'Breach Database', risk: 'HIGH' },
+  // Job platforms
+  { id: 61, name: 'Apna', domain: 'apna.co', category: 'Job Portal', risk: 'MED' },
+  { id: 62, name: 'Hirist', domain: 'hirist.com', category: 'Job Portal', risk: 'LOW' },
+  { id: 63, name: 'IIM Jobs', domain: 'iimjobs.com', category: 'Job Portal', risk: 'MED' },
+  { id: 64, name: 'Freshersworld', domain: 'freshersworld.com', category: 'Job Portal', risk: 'MED' },
+  // Matrimonial
+  { id: 65, name: 'Shaadi.com', domain: 'shaadi.com', category: 'Matrimonial', risk: 'HIGH' },
+  { id: 66, name: 'BharatMatrimony', domain: 'bharatmatrimony.com', category: 'Matrimonial', risk: 'HIGH' },
+  { id: 67, name: 'JeevanSathi', domain: 'jeevansathi.com', category: 'Matrimonial', risk: 'MED' },
+  // Education
+  { id: 68, name: 'Vedantu', domain: 'vedantu.com', category: 'Education', risk: 'MED' },
+  { id: 69, name: 'Doubtnut', domain: 'doubtnut.com', category: 'Education', risk: 'LOW' },
+  // Telecom marketing
+  { id: 70, name: 'Karix', domain: 'karix.io', category: 'Marketing Platform', risk: 'HIGH' },
+  { id: 71, name: 'MSG91', domain: 'msg91.com', category: 'Marketing Platform', risk: 'HIGH' },
+  { id: 72, name: 'Gupshup', domain: 'gupshup.io', category: 'Marketing Platform', risk: 'HIGH' },
+];
+
+export const PLANS = [
+  {
+    id: 'report',
+    name: 'One-Time Report',
+    description: 'Full Scan Report',
+    monthly: 99,
+    annual: null,
+    oneTime: true,
+    features: [
+      'Full unblurred scan results',
+      'Downloadable PDF report',
+      'Breach intelligence',
+      'Legal evidence document',
+    ],
+    notIncluded: [
+      'No removal requests',
+      'No monitoring',
+    ],
+  },
+  {
+    id: 'shield',
+    name: 'Shield',
+    description: '1 Person Protection',
+    monthly: 149,
+    annual: 1490,
+    annualPerMonth: 124,
+    monthsFree: 2,
+    saving: 298,
+    features: [
+      'Removal requests to all 72+ databases',
+      'Automatic rescan every 15 days',
+      'Reappearance detection + re-removal',
+      'ScamSafe Privacy Advisor',
+      'Deletion Certificate PDF',
+      'Live Deletion Log',
+    ],
+  },
+  {
+    id: 'shield-pro',
+    name: 'Shield Pro',
+    description: '1 Person + Advanced',
+    monthly: 399,
+    annual: 3990,
+    annualPerMonth: 332,
+    monthsFree: 2,
+    saving: 798,
+    popular: true,
+    features: [
+      'Everything in Shield',
+      'Priority rescans (every 15 days)',
+      'Dark web breach monitoring — Launching Soon',
+      'Inbox Shield — scan & clean email spam/scams — Launching Soon',
+      'Priority support (24hr response)',
+      'DPBI complaint document generation',
+    ],
+  },
+  {
+    id: 'family-vault',
+    name: 'Family Vault',
+    description: 'Up to 5 Family Members',
+    monthly: 699,
+    annual: 6990,
+    annualPerMonth: 582,
+    monthsFree: 2,
+    saving: 1398,
+    bestValue: true,
+    features: [
+      'Everything in Shield Pro',
+      'Protect up to 5 family members',
+      'Family exposure report',
+      'Single dashboard — all members',
+      'Priority family support',
+    ],
+  },
+];
+
+export const DATA_TYPES = ['Phone', 'Email', 'Address', 'PAN', 'Aadhaar', 'DOB'];
+
+export const AI_QUICK_QUESTIONS = [
+  'How did scammers get my number?',
+  'What can they do with my Aadhaar?',
+  'Is removal guaranteed?',
+  'How does DPDP Act protect me?',
+];
