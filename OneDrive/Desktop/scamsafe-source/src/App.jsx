@@ -25,6 +25,7 @@ import InboxShield from './pages/InboxShield';
 import Knowledge from './pages/Knowledge';
 import InboxCallback from './pages/InboxCallback';
 import PaymentCallback from './pages/PaymentCallback';
+import SubscriptionUpgrade from './pages/SubscriptionUpgrade';
 import InstallPrompt from './components/InstallPrompt';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import NavHeader from './components/NavHeader';
@@ -103,6 +104,7 @@ export default function App() {
             <Route path="/inbox-shield" element={<InboxShield />} />
             <Route path="/knowledge" element={<Knowledge />} />
             <Route path="/knowledge/:slug" element={<Knowledge />} />
+            <Route path="/subscription-upgrade" element={<SubscriptionUpgrade />} />
             <Route path="/live" element={
               <Suspense fallback={<div style={{ color: '#9090B8', textAlign: 'center', paddingTop: 40 }}>Loading...</div>}>
                 <LiveDashboard />

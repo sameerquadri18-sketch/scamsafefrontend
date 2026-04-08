@@ -202,22 +202,23 @@ export default function Dashboard() {
         }}
       />
 
-      {/* Inbox Shield quick link */}
+      {/* Inbox Shield quick link - Coming Soon */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        onClick={() => navigate('/inbox-shield')}
-        className="glass-card p-4 flex items-center gap-3 cursor-pointer hover:border-accent-purple/40 transition-all border border-transparent"
+        className="glass-card p-4 flex items-center gap-3 border border-gray-700 opacity-75"
       >
-        <div className="w-10 h-10 rounded-xl bg-accent-purple/20 flex items-center justify-center flex-shrink-0">
-          <MailCheck size={20} className="text-accent-purple" />
+        <div className="w-10 h-10 rounded-xl bg-gray-700/20 flex items-center justify-center flex-shrink-0">
+          <MailCheck size={20} className="text-gray-500" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-semibold text-white">Inbox Shield</p>
-          <p className="text-[10px] text-gray-500">Scan & clean spam, scams, data broker emails</p>
+          <p className="text-sm font-semibold text-gray-400">Inbox Shield</p>
+          <p className="text-[10px] text-gray-600">Coming Soon - Advanced email protection</p>
         </div>
-        <ChevronRight size={16} className="text-gray-600" />
+        <div className="px-2 py-1 bg-gray-700 rounded-full">
+          <span className="text-xs text-gray-400 font-medium">Coming Soon</span>
+        </div>
       </motion.div>
 
       {/* Download Certificate */}
