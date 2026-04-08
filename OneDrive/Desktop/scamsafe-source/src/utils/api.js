@@ -600,15 +600,9 @@ export async function adminCreateTestInvoice(token) {
 }
 
 export async function adminDownloadInvoicePDF(invoiceNumber) {
-  const res = await api.get(`/admin/invoice-pdf/${invoiceNumber}`, { responseType: 'blob' });
-  const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${invoiceNumber}.pdf`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
+  // Open HTML invoice in new window since we're serving HTML instead of PDF
+  const invoiceUrl = `${api.defaults.baseURL}/admin/invoice-pdf/${invoiceNumber}`;
+  window.open(invoiceUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
   return true;
 }
 
