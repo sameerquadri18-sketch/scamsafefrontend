@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, CreditCard, BarChart3, Mail, Search, ChevronLeft, ChevronRight, Lock, LogOut, RefreshCw, Download, FileText, TrendingUp, Eye, Activity, Database, Server, CheckCircle, AlertTriangle, Settings, ToggleLeft, ToggleRight, MessageCircle, Phone, X, Send, Loader2 } from 'lucide-react';
 import { adminLogin, adminGetStats, adminGetUsers, adminGetPayments, adminGetScans, adminGetHealth, adminGetUserFull, adminSendWhatsApp, adminGetWhatsAppTemplates, adminGetInvoices, adminGetInvoiceStats, adminCreateTestInvoice, adminDownloadInvoicePDF, adminRecordPayment } from '../utils/api';
 import AutomationStatus from '../components/AutomationStatus';
-import AdminProtectionWarning from '../components/AdminProtectionWarning';
 
 function StatCard({ icon: Icon, label, value, sub, color }) {
   return (
@@ -228,6 +227,32 @@ export default function Admin() {
   }, [authenticated]);
 
   const refreshAll = () => { loadStats(); loadUsers(usersPage); loadPayments(paymentsPage); loadScans(scansPage); loadHealth(); };
+
+  const handleStatusChange = async (phone, status) => {
+    try {
+      const response = await fetch('https://web-production-71fe5.up.railway.app/api/v1/admin/customer-status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: phone,
+          status: status
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log('Status updated:', result);
+        // Refresh users to show updated status
+        loadUsers(usersPage);
+      } else {
+        console.error('Failed to update status');
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    }
+  };
 
   // Prompt 2: View user detail
   const handleViewUser = async (phone) => {
@@ -519,11 +544,14 @@ export default function Admin() {
                         {u.is_family_owner && <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent-purple/10 text-accent-purple ml-1">Family Owner</span>}
                       </td>
                       <td className="p-4">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                          u.status === 'Active' ? 'bg-accent-green/10 text-accent-green' :
-                          u.status === 'Active (Family)' ? 'bg-accent-orange/10 text-accent-orange' :
-                          'bg-gray-500/10 text-gray-400'
-                        }`}>{u.status || 'Inactive'}</span>
+                        <select 
+                          value={u.status === 'Active' ? 'active' : 'inactive'}
+                          onChange={(e) => handleStatusChange(u.phone || u.phone_masked?.replace(/\*/g, ''), e.target.value)}
+                          className="text-xs font-medium px-2 py-1 rounded-full bg-[#0d1b2a] border border-gray-800 text-white outline-none focus:border-accent-purple/50 cursor-pointer"
+                        >
+                          <option value="active">Active</option>
+                          <option value="inactive">Inactive</option>
+                        </select>
                       </td>
                       <td className="p-4 text-sm text-gray-300">{u.scan_count}</td>
                       <td className="p-4"><span className="text-sm px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400">{u.databases_found}</span></td>
@@ -912,26 +940,13 @@ export default function Admin() {
                 <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-accent-purple" /></div>
               ) : selectedUser ? (
                 <div className="flex flex-col gap-4">
-                  {authenticated && (
-                    <div className="flex flex-col gap-6">
-                      <AdminProtectionWarning />
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
-                          <p className="text-[10px] text-gray-500 uppercase mb-1">Full Phone</p>
-                          <p className="text-sm font-bold text-white flex items-center gap-1.5"><Phone size={13} className="text-accent-green" /> {selectedUser.phone_display}</p>
-                        </div>
-                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
-                          <p className="text-[10px] text-gray-500 uppercase mb-1">Email</p>
-                          <p className="text-sm font-medium text-white">{selectedUser.email || '—'}</p>
-                        </div>
-                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
-                          <p className="text-[10px] text-gray-500 uppercase mb-1">Plan</p>
-                          <p className="text-sm font-bold">{selectedUser.plan} {selectedUser.plan_active ? <span className="text-accent-green text-xs">(Active)</span> : <span className="text-gray-600 text-xs">(Inactive)</span>}</p>
-                        </div>
-                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
-                          <p className="text-[10px] text-gray-500 uppercase mb-1">Registered</p>
-                          <p className="text-sm text-gray-300">{formatDate(selectedUser.created_at)}</p>
-                        </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
+                      <p className="text-[10px] text-gray-500 uppercase mb-1">Full Phone</p>
+                      <p className="text-sm font-bold text-white flex items-center gap-1.5"><Phone size={13} className="text-accent-green" /> {selectedUser.phone_display}</p>
+                    </div>
+                    <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
+                      <p className="text-[10px] text-gray-500 uppercase mb-1">Email</p>
                       <p className="text-sm font-medium text-white">{selectedUser.email || '—'}</p>
                     </div>
                     <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
