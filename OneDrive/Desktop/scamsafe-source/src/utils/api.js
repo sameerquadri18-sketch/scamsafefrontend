@@ -627,7 +627,7 @@ export async function getSubscriptionPlans() {
 
 export async function upgradeSubscription(phone, newPlan) {
   try {
-    const res = await api.post('/user/upgrade-subscription', { phone, new_plan: newPlan });
+    const res = await api.post('/user/upgrade-subscription', { phone: phone, plan: newPlan });
     return res.data;
   } catch (err) {
     console.warn('Upgrade subscription failed:', err.message);

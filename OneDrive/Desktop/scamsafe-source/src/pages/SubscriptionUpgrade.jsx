@@ -109,7 +109,7 @@ export default function SubscriptionUpgrade() {
               </button>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center">
-                  <Shield size={16} className="text-white" />
+                  <span className="text-white font-bold text-xs">SS</span>
                 </div>
                 <span className="text-white font-bold">ScamSafe</span>
               </div>
