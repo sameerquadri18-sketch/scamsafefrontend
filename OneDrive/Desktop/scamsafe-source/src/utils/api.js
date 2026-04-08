@@ -612,6 +612,27 @@ export async function adminDownloadInvoicePDF(invoiceNumber) {
   return true;
 }
 
+// ---------- Subscription Management ----------
+export async function getSubscriptionPlans() {
+  try {
+    const res = await api.post('/user/subscription-plans');
+    return res.data;
+  } catch (err) {
+    console.warn('Get subscription plans failed:', err.message);
+    throw err;
+  }
+}
+
+export async function upgradeSubscription(phone, newPlan) {
+  try {
+    const res = await api.post('/user/upgrade-subscription', { phone, new_plan: newPlan });
+    return res.data;
+  } catch (err) {
+    console.warn('Upgrade subscription failed:', err.message);
+    throw err;
+  }
+}
+
 // ---------- Prompt 7: Admin Social ----------
 export async function adminGetSocialStatus(token) {
   try {

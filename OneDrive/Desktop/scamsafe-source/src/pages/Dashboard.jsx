@@ -16,6 +16,7 @@ import DataMinimisation from '../components/DataMinimisation';
 import ComplianceTracker from '../components/ComplianceTracker';
 import NotificationBell from '../components/NotificationBell';
 import ScanQuota from '../components/ScanQuota';
+import SubscriptionManager from '../components/SubscriptionManager';
 
 const dataIcons = {
   Phone: Phone, Email: Mail, Address: MapPin,
@@ -192,6 +193,14 @@ export default function Dashboard() {
       {/* Protection Score — primary dashboard view */}
       <ProtectionScore phone={userPhone} />
 
+      {/* Subscription Manager */}
+      <SubscriptionManager 
+        currentPlan={user?.plan || 'free'} 
+        onUpgrade={(newPlan) => {
+          // Refresh user data after upgrade
+          getUserStatus(userPhone).then(data => setDashboard(data));
+        }}
+      />
 
       {/* Inbox Shield quick link */}
       <motion.div
