@@ -600,9 +600,17 @@ export async function adminCreateTestInvoice(token) {
 }
 
 export async function adminDownloadInvoicePDF(invoiceNumber) {
-  // Open HTML invoice in new window since we're serving HTML instead of PDF
+  // Download text-based invoice file
   const invoiceUrl = `${api.defaults.baseURL}/admin/invoice-pdf/${invoiceNumber}`;
-  window.open(invoiceUrl, '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
+  
+  // Create a temporary link to download the file
+  const link = document.createElement('a');
+  link.href = invoiceUrl;
+  link.download = `${invoiceNumber}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
   return true;
 }
 
