@@ -50,7 +50,11 @@ export default function SubscriptionUpgrade() {
 
   useEffect(() => {
     if (user?.plan) {
-      setCurrentPlan(user.plan);
+      // Handle different plan name formats from backend
+      const normalizedPlan = user.plan === 'shield_pro' ? 'shield-pro' : 
+                            user.plan === 'family_vault' ? 'family-vault' : 
+                            user.plan || 'free';
+      setCurrentPlan(normalizedPlan);
     }
   }, [user]);
 

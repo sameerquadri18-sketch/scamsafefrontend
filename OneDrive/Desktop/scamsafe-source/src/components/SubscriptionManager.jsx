@@ -32,7 +32,13 @@ const plans = {
 
 export default function SubscriptionManager({ currentPlan, onUpgrade }) {
   const navigate = useNavigate();
-  const currentPlanInfo = plans[currentPlan] || plans.free;
+  
+  // Handle different plan name formats from backend
+  const normalizedPlan = currentPlan === 'shield_pro' ? 'shield-pro' : 
+                          currentPlan === 'family_vault' ? 'family-vault' : 
+                          currentPlan || 'free';
+  
+  const currentPlanInfo = plans[normalizedPlan] || plans.free;
   const CurrentIcon = currentPlanInfo.icon;
 
   const handleUpgradeClick = () => {
