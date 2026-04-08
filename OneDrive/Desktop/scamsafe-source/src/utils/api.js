@@ -130,22 +130,22 @@ export async function adminLogin(email, password) {
 }
 
 export async function adminGetStats(token) {
-  const res = await api.get(`/admin/stats?token=${encodeURIComponent(token)}`);
+  const res = await api.get(`/admin/stats`);
   return res.data;
 }
 
 export async function adminGetUsers(token, page = 1) {
-  const res = await api.get(`/admin/users?token=${encodeURIComponent(token)}&page=${page}`);
+  const res = await api.get(`/admin/users?page=${page}`);
   return res.data;
 }
 
 export async function adminGetPayments(token, page = 1) {
-  const res = await api.get(`/admin/payments?token=${encodeURIComponent(token)}&page=${page}`);
+  const res = await api.get(`/admin/payments?page=${page}`);
   return res.data;
 }
 
 export async function adminGetScans(token, page = 1) {
-  const res = await api.get(`/admin/scans?token=${encodeURIComponent(token)}&page=${page}`);
+  const res = await api.get(`/admin/scans?page=${page}`);
   return res.data;
 }
 
@@ -410,7 +410,7 @@ export async function cancelSubscription(phone, reason = '') {
 
 // ---------- Admin Health ----------
 export async function adminGetHealth(token) {
-  const res = await api.get(`/admin/health?token=${encodeURIComponent(token)}`);
+  const res = await api.get(`/admin/health`);
   return res.data;
 }
 
