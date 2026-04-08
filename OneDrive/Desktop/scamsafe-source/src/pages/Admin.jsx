@@ -63,7 +63,16 @@ function Pagination({ page, pages, onPageChange }) {
 export default function Admin() {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
-  const [authenticated, setAuthenticated] = useState(false);
+  const [authenticated, setAuthenticated] = useState(() => {
+    // Check if admin was previously authenticated
+    try {
+      const savedAuth = localStorage.getItem('scamsafe_admin_auth');
+      const savedToken = localStorage.getItem('scamsafe_admin_token');
+      return savedAuth === 'true' && savedToken;
+    } catch {
+      return false;
+    }
+  });
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -105,8 +114,27 @@ export default function Admin() {
     } catch { return { darkWeb: false, inboxShield: false }; }
   });
 
-  const [storedToken, setStoredToken] = useState('');
+  const [storedToken, setStoredToken] = useState(() => {
+    // Restore token from localStorage if it exists
+    try {
+      return localStorage.getItem('scamsafe_admin_token') || '';
+    } catch {
+      return '';
+    }
+  });
   const tokenRef = useRef('');
+
+  // Initialize tokenRef on component mount
+  useEffect(() => {
+    try {
+      const savedToken = localStorage.getItem('scamsafe_admin_token');
+      if (savedToken) {
+        tokenRef.current = savedToken;
+      }
+    } catch (error) {
+      console.error('Error restoring token:', error);
+    }
+  }, []);
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('');
@@ -126,6 +154,10 @@ export default function Admin() {
       tokenRef.current = res.token;
       setStoredToken(res.token);
       setAuthenticated(true);
+      // Save authentication state to localStorage
+      localStorage.setItem('scamsafe_admin_auth', 'true');
+      localStorage.setItem('scamsafe_admin_token', res.token);
+      localStorage.setItem('scamsafe_admin_email', adminEmail);
     } catch (err) {
       setLoginError('Invalid email or password');
     }
@@ -140,6 +172,10 @@ export default function Admin() {
     setStats(null);
     setUsers(null);
     setPayments(null);
+    // Clear authentication state from localStorage
+    localStorage.removeItem('scamsafe_admin_auth');
+    localStorage.removeItem('scamsafe_admin_token');
+    localStorage.removeItem('scamsafe_admin_email');
   };
 
   const handlePasswordChange = async (e) => {
