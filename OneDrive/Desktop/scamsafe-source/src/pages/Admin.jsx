@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, CreditCard, BarChart3, Mail, Search, ChevronLeft, ChevronRight, Lock, LogOut, RefreshCw, Download, FileText, TrendingUp, Eye, Activity, Database, Server, CheckCircle, AlertTriangle, Settings, ToggleLeft, ToggleRight, MessageCircle, Phone, X, Send, Loader2 } from 'lucide-react';
 import { adminLogin, adminGetStats, adminGetUsers, adminGetPayments, adminGetScans, adminGetHealth, adminGetUserFull, adminSendWhatsApp, adminGetWhatsAppTemplates, adminGetInvoices, adminGetInvoiceStats, adminCreateTestInvoice, adminDownloadInvoicePDF, adminRecordPayment } from '../utils/api';
 import AutomationStatus from '../components/AutomationStatus';
+import AdminProtectionWarning from '../components/AdminProtectionWarning';
 
 function StatCard({ icon: Icon, label, value, sub, color }) {
   return (
@@ -911,13 +912,26 @@ export default function Admin() {
                 <div className="flex items-center justify-center py-12"><Loader2 size={24} className="animate-spin text-accent-purple" /></div>
               ) : selectedUser ? (
                 <div className="flex flex-col gap-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
-                      <p className="text-[10px] text-gray-500 uppercase mb-1">Full Phone</p>
-                      <p className="text-sm font-bold text-white flex items-center gap-1.5"><Phone size={13} className="text-accent-green" /> {selectedUser.phone_display}</p>
-                    </div>
-                    <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
-                      <p className="text-[10px] text-gray-500 uppercase mb-1">Email</p>
+                  {authenticated && (
+                    <div className="flex flex-col gap-6">
+                      <AdminProtectionWarning />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
+                          <p className="text-[10px] text-gray-500 uppercase mb-1">Full Phone</p>
+                          <p className="text-sm font-bold text-white flex items-center gap-1.5"><Phone size={13} className="text-accent-green" /> {selectedUser.phone_display}</p>
+                        </div>
+                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
+                          <p className="text-[10px] text-gray-500 uppercase mb-1">Email</p>
+                          <p className="text-sm font-medium text-white">{selectedUser.email || '—'}</p>
+                        </div>
+                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
+                          <p className="text-[10px] text-gray-500 uppercase mb-1">Plan</p>
+                          <p className="text-sm font-bold">{selectedUser.plan} {selectedUser.plan_active ? <span className="text-accent-green text-xs">(Active)</span> : <span className="text-gray-600 text-xs">(Inactive)</span>}</p>
+                        </div>
+                        <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
+                          <p className="text-[10px] text-gray-500 uppercase mb-1">Registered</p>
+                          <p className="text-sm text-gray-300">{formatDate(selectedUser.created_at)}</p>
+                        </div>
                       <p className="text-sm font-medium text-white">{selectedUser.email || '—'}</p>
                     </div>
                     <div className="bg-[#060e1a] rounded-lg p-3 border border-gray-800">
