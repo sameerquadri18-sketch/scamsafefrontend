@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Shield, Crown, Check, X, ArrowLeft, Sparkles, Star, ArrowUp, CreditCard, Loader2, CheckCircle2 } from 'lucide-react';
-import { upgradeSubscription, getSubscriptionPlans } from '../utils/api';
+import { upgradeSubscription, getSubscriptionPlans, getUserDashboard } from '../utils/api';
 import { useApp } from '../contexts/AppContext';
 
 const plans = {
@@ -49,13 +49,31 @@ export default function SubscriptionUpgrade() {
   const [upgradeError, setUpgradeError] = useState('');
 
   useEffect(() => {
-    if (user?.plan) {
-      // Handle different plan name formats from backend
-      const normalizedPlan = user.plan === 'shield_pro' ? 'shield-pro' : 
-                            user.plan === 'family_vault' ? 'family-vault' : 
-                            user.plan || 'free';
-      setCurrentPlan(normalizedPlan);
-    }
+    const fetchCurrentPlan = async () => {
+      try {
+        if (user?.phone) {
+          const dashboardData = await getUserDashboard(user.phone);
+          if (dashboardData.success && dashboardData.data.plan) {
+            // Handle different plan name formats from backend
+            const normalizedPlan = dashboardData.data.plan === 'shield_pro' ? 'shield-pro' : 
+                                  dashboardData.data.plan === 'family_vault' ? 'family-vault' : 
+                                  dashboardData.data.plan || 'free';
+            setCurrentPlan(normalizedPlan);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch current plan:', error);
+        // Fallback to user context if dashboard API fails
+        if (user?.plan) {
+          const normalizedPlan = user.plan === 'shield_pro' ? 'shield-pro' : 
+                                user.plan === 'family_vault' ? 'family-vault' : 
+                                user.plan || 'free';
+          setCurrentPlan(normalizedPlan);
+        }
+      }
+    };
+
+    fetchCurrentPlan();
   }, [user]);
 
   const handleUpgrade = async (planKey) => {
