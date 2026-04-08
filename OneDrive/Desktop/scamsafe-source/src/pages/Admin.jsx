@@ -294,7 +294,7 @@ export default function Admin() {
   const filteredUsers = users?.users?.filter(u => {
     if (!searchTerm) return true;
     const term = searchTerm.toLowerCase();
-    return u.phone?.includes(term) || u.phone_masked?.includes(term) || u.email?.toLowerCase().includes(term);
+    return u.phone_display?.includes(term) || u.phone_masked?.includes(term) || (u.email && u.email.toLowerCase().includes(term));
   }) || [];
 
   const formatDate = (d) => {
@@ -546,7 +546,7 @@ export default function Admin() {
                       <td className="p-4">
                         <select 
                           value={u.status === 'Active' ? 'active' : 'inactive'}
-                          onChange={(e) => handleStatusChange(u.phone || u.phone_masked?.replace(/\*/g, ''), e.target.value)}
+                          onChange={(e) => handleStatusChange(u.phone_display || u.phone_masked?.replace(/\*/g, ''), e.target.value)}
                           className="text-xs font-medium px-2 py-1 rounded-full bg-[#0d1b2a] border border-gray-800 text-white outline-none focus:border-accent-purple/50 cursor-pointer"
                         >
                           <option value="active">Active</option>
@@ -560,8 +560,8 @@ export default function Admin() {
                       <td className="p-4 text-xs text-gray-500 whitespace-nowrap">{formatDate(u.first_scan)}</td>
                       <td className="p-4 text-right whitespace-nowrap">
                         <div className="flex items-center gap-1.5 justify-end">
-                          <button onClick={() => handleViewUser(u.phone || u.phone_masked?.replace(/\*/g, ''))} title="View full details" className="p-1.5 rounded-lg bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-colors"><Eye size={14} /></button>
-                          <button onClick={() => handleOpenWhatsApp(u.phone || u.phone_masked?.replace(/\*/g, ''))} title="Send WhatsApp" className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"><MessageCircle size={14} /></button>
+                          <button onClick={() => handleViewUser(u.phone_display || u.phone_masked?.replace(/\*/g, ''))} title="View full details" className="p-1.5 rounded-lg bg-accent-purple/10 text-accent-purple hover:bg-accent-purple/20 transition-colors"><Eye size={14} /></button>
+                          <button onClick={() => handleOpenWhatsApp(u.phone_display || u.phone_masked?.replace(/\*/g, ''))} title="Send WhatsApp" className="p-1.5 rounded-lg bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors"><MessageCircle size={14} /></button>
                           {(!u.payment || u.payment.status !== 'paid') && (
                             <button onClick={async () => {
                               const plan = prompt('Plan (shield / family-vault):', 'family-vault');
@@ -570,7 +570,7 @@ export default function Admin() {
                               if (!amt) return;
                               const email = prompt('Customer email:', u.email || '');
                               try {
-                                const r = await adminRecordPayment(tokenRef.current, u.phone, email || '', plan, parseInt(amt) * 100);
+                                const r = await adminRecordPayment(tokenRef.current, u.phone_display, email || '', plan, parseInt(amt) * 100);
                                 alert(`Payment recorded! Invoice: ${r.invoice_number}\nAmount: ${r.amount}`);
                                 loadUsers(usersPage);
                               } catch (e) { alert('Failed: ' + (e?.response?.data?.detail || e.message)); }
