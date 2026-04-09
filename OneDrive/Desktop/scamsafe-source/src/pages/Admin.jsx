@@ -76,6 +76,16 @@ export default function Admin() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // WhatsApp state
+  const [whatsappStats, setWhatsAppStats] = useState({});
+  const [singlePhone, setSinglePhone] = useState('');
+  const [singleTemplate, setSingleTemplate] = useState('');
+  const [singleVariables, setSingleVariables] = useState('');
+  const [bulkAudience, setBulkAudience] = useState('');
+  const [bulkTemplate, setBulkTemplate] = useState('');
+  const [bulkVariables, setBulkVariables] = useState('');
+  const [whatsappMessages, setWhatsAppMessages] = useState([]);
 
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState(null);
@@ -262,6 +272,13 @@ export default function Admin() {
     if (authenticated) { loadStats(); loadUsers(); loadPayments(); loadScans(); loadHealth(); }
   }, [authenticated]);
 
+  useEffect(() => {
+    if (authenticated && activeTab === 'whatsapp') {
+      loadWhatsAppStats();
+      loadWhatsAppMessages();
+    }
+  }, [authenticated, activeTab]);
+
   const refreshAll = () => { loadStats(); loadUsers(usersPage); loadPayments(paymentsPage); loadScans(scansPage); loadHealth(); };
 
   const handleStatusChange = async (phone, status) => {
@@ -304,8 +321,6 @@ export default function Admin() {
   // Prompt 2: Open WhatsApp modal
   const handleOpenWhatsApp = async (phone) => {
     setWaPhone(phone);
-    setWaMessage('');
-    setWaResult(null);
     setShowWhatsApp(true);
     try {
       const t = await adminGetWhatsAppTemplates(tokenRef.current);
@@ -325,6 +340,93 @@ export default function Admin() {
       setWaResult('Failed to send: ' + (e?.response?.data?.detail || e.message));
     }
     setWaSending(false);
+  };
+
+  // WhatsApp functions
+  const loadWhatsAppStats = async () => {
+    try {
+      const response = await fetch('/api/v1/admin/whatsapp/stats', {
+        headers: { 'admin-token': localStorage.getItem('scamsafe_admin_token') }
+      });
+      const data = await response.json();
+      setWhatsAppStats(data);
+    } catch (error) {
+      console.error('Failed to load WhatsApp stats:', error);
+    }
+  };
+
+  const sendSingleWhatsApp = async () => {
+    try {
+      const variables = singleVariables ? singleVariables.split(',').map(v => v.trim()) : [];
+      const response = await fetch('/api/v1/admin/whatsapp/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'admin-token': localStorage.getItem('scamsafe_admin_token')
+        },
+        body: JSON.stringify({
+          phone: singlePhone,
+          template_name: singleTemplate,
+          variables
+        })
+      });
+      
+      if (response.ok) {
+        alert('WhatsApp message sent successfully!');
+        setSinglePhone('');
+        setSingleTemplate('');
+        setSingleVariables('');
+        loadWhatsAppMessages();
+      } else {
+        alert('Failed to send WhatsApp message');
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp:', error);
+      alert('Error sending WhatsApp message');
+    }
+  };
+
+  const sendBulkWhatsApp = async () => {
+    try {
+      const response = await fetch('/api/v1/admin/whatsapp/bulk-send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'admin-token': localStorage.getItem('scamsafe_admin_token')
+        },
+        body: JSON.stringify({
+          template_name: bulkTemplate,
+          variables_template: bulkVariables,
+          filter_type: bulkAudience
+        })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        alert(`WhatsApp messages sent successfully! Sent: ${data.sent}, Failed: ${data.failed}`);
+        setBulkAudience('');
+        setBulkTemplate('');
+        setBulkVariables('');
+        loadWhatsAppMessages();
+      } else {
+        alert('Failed to send bulk WhatsApp messages');
+      }
+    } catch (error) {
+      console.error('Error sending bulk WhatsApp:', error);
+      alert('Error sending bulk WhatsApp messages');
+    }
+  };
+
+  const loadWhatsAppMessages = async () => {
+    try {
+      const response = await fetch('/api/v1/admin/whatsapp/messages', {
+        headers: { 'admin-token': localStorage.getItem('scamsafe_admin_token') }
+      });
+      const data = await response.json();
+      setWhatsAppMessages(data.messages || []);
+    } catch (error) {
+      console.error('Failed to load WhatsApp messages:', error);
+    }
   };
 
   const filteredUsers = users?.users?.filter(u => {
