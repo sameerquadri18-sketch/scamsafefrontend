@@ -96,7 +96,7 @@ export const registerUser = (data) =>
   api.post('/user/register', data);
 
 export const getUserStatus = (userId) =>
-  api.get(`/user/${userId}/status`);
+  api.post('/user/dashboard', { phone: userId });
 
 // ---------- Pricing tracking for abandoned checkout ----------
 export const trackPricingView = () => {
@@ -600,18 +600,66 @@ export async function adminCreateTestInvoice(token) {
 }
 
 export async function adminDownloadInvoicePDF(invoiceNumber) {
-  // Download text-based invoice file
-  const invoiceUrl = `${api.defaults.baseURL}/admin/invoice-pdf/${invoiceNumber}`;
-  
-  // Create a temporary link to download the file
-  const link = document.createElement('a');
-  link.href = invoiceUrl;
-  link.download = `${invoiceNumber}.txt`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  
-  return true;
+  // Download PDF invoice file
+  try {
+    const res = await api.get(`/admin/invoice-pdf/${invoiceNumber}`, { responseType: 'blob' });
+    
+    // Check if it's a PDF
+    const contentType = res.headers['content-type'] || '';
+    const isPDF = contentType.includes('application/pdf');
+    
+    // Create blob with correct content type
+    const blob = new Blob([res.data], { 
+      type: isPDF ? 'application/pdf' : 'text/plain' 
+    });
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${invoiceNumber}.${isPDF ? 'pdf' : 'txt'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    return true;
+  } catch (err) {
+    console.warn('Invoice PDF download failed:', err.message);
+    return false;
+  }
+}
+
+// ---------- User Invoice Download ----------
+export async function userDownloadInvoicePDF(invoiceNumber) {
+  // Download PDF invoice file for user dashboard
+  try {
+    const res = await api.get(`/user/invoice-pdf/${invoiceNumber}`, { responseType: 'blob' });
+    
+    // Check if it's a PDF
+    const contentType = res.headers['content-type'] || '';
+    const isPDF = contentType.includes('application/pdf');
+    
+    // Create blob with correct content type
+    const blob = new Blob([res.data], { 
+      type: isPDF ? 'application/pdf' : 'text/plain' 
+    });
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${invoiceNumber}.${isPDF ? 'pdf' : 'txt'}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    return true;
+  } catch (err) {
+    console.warn('User invoice PDF download failed:', err.message);
+    return false;
+  }
 }
 
 // ---------- Subscription Management ----------
@@ -756,6 +804,52 @@ export async function getAutomationStatus(token) {
   const res = await api.get('/admin/automation-status', {
     params: { token }
   });
+  return res.data;
+}
+
+// ---------- WhatsApp Business API ----------
+export async function adminGetWhatsAppStats(token) {
+  const res = await api.get('/admin/whatsapp/stats', {
+    headers: { 'admin-token': token }
+  });
+  backendAvailable = true;
+  return res.data;
+}
+
+export async function adminSendWhatsAppMessage(token, phone, templateName, variables) {
+  const res = await api.post('/admin/whatsapp/send', {
+    phone,
+    template_name: templateName,
+    variables
+  }, {
+    headers: { 'admin-token': token }
+  });
+  backendAvailable = true;
+  return res.data;
+}
+
+export async function adminSendBulkWhatsApp(token, templateName, variablesTemplate, filterType) {
+  const res = await api.post('/admin/whatsapp/bulk-send', {
+    template_name: templateName,
+    variables_template: variablesTemplate,
+    filter_type: filterType
+  }, {
+    headers: { 'admin-token': token }
+  });
+  backendAvailable = true;
+  return res.data;
+}
+
+export async function adminGetWhatsAppMessages(token, dateFilter, statusFilter, templateFilter) {
+  const params = new URLSearchParams();
+  if (dateFilter) params.append('date', dateFilter);
+  if (statusFilter) params.append('status', statusFilter);
+  if (templateFilter) params.append('template', templateFilter);
+  
+  const res = await api.get(`/admin/whatsapp/messages?${params}`, {
+    headers: { 'admin-token': token }
+  });
+  backendAvailable = true;
   return res.data;
 }
 

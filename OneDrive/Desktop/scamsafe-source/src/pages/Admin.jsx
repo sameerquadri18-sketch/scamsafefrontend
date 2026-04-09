@@ -380,6 +380,7 @@ export default function Admin() {
     { id: 'scans', label: 'Scans', icon: Search },
     { id: 'users', label: 'Users', icon: Users },
     { id: 'payments', label: 'Billing', icon: CreditCard },
+    { id: 'whatsapp', label: 'WhatsApp', icon: MessageCircle },
     { id: 'automation', label: 'Automation', icon: Activity },
     { id: 'health', label: 'Health', icon: Server },
     { id: 'settings', label: 'Settings', icon: Settings },
